@@ -17,6 +17,11 @@
 ## الملفات اللي بتتشغل في SQL Editor (بالترتيب)
 1. `supabase/setup.sql`: الجداول والصلاحيات وحساب المدير.
 2. `supabase/02-audit.sql`: سجل التعديلات (مرة واحدة بعد الأول).
+3. `supabase/03-hardening.sql`: قيود تمنع التداخل والأخطاء (إجازات، حضور، أرقام قومية مكررة، مبالغ سالبة).
+
+## إعدادات لازم تتعمل من لوحة Supabase
+- Authentication ← Sign In / Providers: عطّل **Allow new users to sign up** (الحسابات بتتضاف من المدير فقط).
+- المكتبات (Supabase / Chart.js / SheetJS) متخزنة محليًا في `admin/vendor/` ومش بتتحمل من CDN خارجي.
 
 ## المزايا
 - استيراد الموظفين من Excel/CSV (صفحة الموظفين ← استيراد Excel).

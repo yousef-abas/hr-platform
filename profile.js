@@ -1,0 +1,111 @@
+HR.docTypes = [
+  { k: 'id', l: 'صورة البطاقة', x: 1 }, { k: 'birth', l: 'شهادة الميلاد' }, { k: 'edu', l: 'المؤهل الدراسي' }, { k: 'crim', l: 'الفيش الجنائي', x: 1 },
+  { k: 'mil', l: 'موقف التجنيد' }, { k: 'contract', l: 'عقد العمل', x: 1 }, { k: 'med', l: 'الكشف الطبي', x: 1 }, { k: 'photo', l: 'صور شخصية' }
+];
+HR.pages.profile = {
+  title: 'ملف الموظف', icon: 'users',
+  async render(root, id) {
+    const { store, ui, state: st } = HR, esc = ui.esc;
+    const [E, A0, L0, R0, P0, D0, T0] = await Promise.all(['employees', 'attendance', 'leaves', 'reviews', 'payroll', 'documents', 'timeline'].map(t => store.list(t)));
+    const e = E.find(x => x.id === id);
+    if (!e) { root.innerHTML = '<div class="card em">الموظف غير موجود. <a href="#employees" style="color:var(--ac)">رجوع للقائمة</a></div>'; return; }
+    const mine = a => a.filter(x => x.empId === id);
+    const A = mine(A0), L = mine(L0), R = mine(R0), P = mine(P0), D = mine(D0), T = mine(T0);
+    const td = ui.today(), dl = d => Math.round((new Date(d) - new Date(td)) / 864e5);
+    const mgr = E.find(x => x.id === e.managerId), mo = td.slice(0, 7);
+    let wd = 0; for (let i = 1; i <= +td.slice(8); i++) { const g = new Date(mo + '-' + String(i).padStart(2, '0')).getUTCDay(); if (g !== 5 && g !== 6) wd++; }
+    const pr = A.filter(a => a.date.startsWith(mo) && a.in), late = pr.filter(a => a.in > '09:30').length;
+    const apct = wd ? Math.min(100, Math.round(pr.length / wd * 100)) : null;
+    const used = L.filter(l => l.type === 'سنوية' && l.status === 'معتمدة').reduce((s, l) => s + l.days, 0);
+    const avg = R.length ? R.reduce((s, r) => s + r.avg, 0) / R.length : 0;
+    const m = Math.max(0, Math.floor((new Date(td) - new Date(e.hire)) / 2629800000));
+    const pl = (n, a, b, c, d) => n === 1 ? a : n === 2 ? b : n <= 10 ? n + ' ' + c : n + ' ' + d;
+    const yy = Math.floor(m / 12), mm = m % 12;
+    const tenure = [yy ? pl(yy, 'سنة', 'سنتان', 'سنوات', 'سنة') : '', mm ? pl(mm, 'شهر', 'شهران', 'شهور', 'شهرًا') : ''].filter(Boolean).join(' و') || 'أقل من شهر';
+    const dst = t => {
+      const d = D.find(x => x.type === t.k);
+      if (!d || !d.received) return ['ناقص', 'da', d];
+      if (d.expiry) { const x = dl(d.expiry); if (x < 0) return ['منتهي', 'da', d]; if (x <= 30) return ['ينتهي خلال ' + x + ' يوم', 'wa', d]; }
+      return ['مستلم', 'ok', d];
+    };
+    const ds = HR.docTypes.map(t => ({ t, s: dst(t) }));
+    const bad = ds.filter(x => x.s[1] === 'da').length;
+    const pf = ['photo', 'nid', 'phone', 'email', 'address', 'marital', 'military', 'emergName', 'emergPhone', 'contractType', 'insuranceNo', 'iban'];
+    const comp = Math.round((pf.filter(k => e[k]).length + ds.filter(x => x.s[1] !== 'da').length) / (pf.length + ds.length) * 100);
+    const S = { active: ['نشط', 'ok'], leave: ['في إجازة', 'wa'], terminated: ['منتهي الخدمة', 'mu'] }[e.status] || ['نشط', 'ok'];
+    const tab = st.ptab || 'ov';
+    const kv = a => '<div class="kv2">' + a.map(r => '<div><span>' + r[0] + '</span><b>' + (r[1] ? esc(r[1]) : '—') + '</b></div>').join('') + '</div>';
+
+    const al = [];
+    if (e.probationEnd && dl(e.probationEnd) >= 0 && dl(e.probationEnd) <= 30) al.push(['wa', 'تنتهي فترة التجربة بعد ' + dl(e.probationEnd) + ' يوم']);
+    if (e.contractEnd) { const x = dl(e.contractEnd); if (x < 0) al.push(['da', 'العقد منتهي منذ ' + (-x) + ' يوم']); else if (x <= 60) al.push(['wa', 'ينتهي العقد بعد ' + x + ' يوم، جهّز التجديد']); }
+    if (bad) al.push(['da', bad + ' مستند ناقص أو منتهي']);
+    const soon = ds.filter(x => x.s[1] === 'wa'); soon.forEach(x => al.push(['wa', x.t.l + ': ' + x.s[0]]));
+    if (late >= 3) al.push(['wa', 'تأخر ' + late + ' مرات هذا الشهر']);
+
+    const tabs = [['ov', 'نظرة عامة'], ['pe', 'البيانات الشخصية'], ['jb', 'الوظيفة والعقد'], ['dc', 'المستندات'], ['at', 'الحضور'], ['lv', 'الإجازات'], ['py', 'الرواتب'], ['pf', 'الأداء'], ['tl', 'السجل']];
+    const V = {
+      ov: () => '<div class="card"><h3>تنبيهات</h3>' + (al.length ? al.map(x => '<div class="al ' + x[0] + '">' + esc(x[1]) + '</div>').join('') : '<div class="al ok">لا توجد تنبيهات على هذا الموظف</div>') + '</div>' +
+        '<div class="g2"><div class="card"><h3>الحضور آخر 6 شهور (أيام)</h3><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h3>التقييم مقابل متوسط القسم</h3><div class="cv"><canvas id="c2"></canvas></div></div></div>' +
+        '<div class="card"><h3>استخدام الإجازات (أيام)</h3><div class="cv" style="height:200px"><canvas id="c3"></canvas></div></div>',
+      pe: () => '<div class="card"><div class="ph" style="margin-bottom:12px"><h3 style="margin:0">البيانات الشخصية</h3><button class="btn ghost sm" data-a="edp">تعديل</button></div>' + kv([['الرقم القومي', e.nid], ['تاريخ الميلاد', e.birth], ['النوع', e.gender], ['محافظة الميلاد', e.gov], ['الحالة الاجتماعية', e.marital], ['موقف التجنيد', e.military], ['الموبايل', e.phone], ['الإيميل', e.email], ['العنوان', e.address]]) + '<h3 style="margin:22px 0 12px">جهة اتصال للطوارئ</h3>' + kv([['الاسم', e.emergName], ['الموبايل', e.emergPhone], ['صلة القرابة', e.emergRel]]) + '</div>',
+      jb: () => '<div class="card"><div class="ph" style="margin-bottom:12px"><h3 style="margin:0">الوظيفة والعقد</h3><button class="btn ghost sm" data-a="edj">تعديل</button></div>' + kv([['المسمى الوظيفي', e.title], ['القسم', e.dept], ['المدير المباشر', mgr && mgr.name], ['تاريخ التعيين', e.hire], ['نوع العقد', e.contractType], ['نهاية العقد', e.contractEnd], ['نهاية فترة التجربة', e.probationEnd], ['الراتب الأساسي', ui.money(e.salary)], ['البدلات', ui.money(e.allow)], ['رقم التأمينات', e.insuranceNo], ['البنك', e.bank], ['رقم الحساب (IBAN)', e.iban]]) + '</div>',
+      dc: () => '<div class="card tw"><h3>المستندات المطلوبة (' + ds.filter(x => x.s[1] !== 'da').length + ' من ' + ds.length + ')</h3><table><tr><th>المستند</th><th>الحالة</th><th>تاريخ الاستلام</th><th>تاريخ الانتهاء</th><th>الملف</th><th></th></tr>' +
+        ds.map(({ t, s }) => { const d = s[2]; return '<tr data-k="' + t.k + '"><td><b>' + t.l + '</b></td><td>' + ui.tag(s[0], s[1]) + '</td><td>' + (d && d.received || '—') + '</td><td>' + (d && d.expiry || (t.x ? '—' : 'لا ينطبق')) + '</td><td>' + (d && d.file ? '<button class="btn ghost sm" data-a="dview">عرض</button>' : '—') + '</td><td><button class="btn sm" data-a="dedit">' + (d && d.received ? 'تعديل' : 'تسجيل استلام') + '</button> <button class="btn ghost sm" data-a="dup">رفع ملف</button>' + (d ? ' <button class="btn danger sm" data-a="ddel">حذف</button>' : '') + '</td></tr>'; }).join('') + '</table><p style="color:var(--mu);font-size:13px">' + HR.files.note + '</p></div>',
+      at: () => '<div class="card tw"><h3>آخر سجلات الحضور</h3><table><tr><th>التاريخ</th><th>الحضور</th><th>الانصراف</th><th>الحالة</th></tr>' + A.slice().sort((a, b) => b.date < a.date ? -1 : 1).slice(0, 30).map(a => '<tr><td>' + a.date + '</td><td>' + (a.in || '—') + '</td><td>' + (a.out || '—') + '</td><td>' + (!a.in ? ui.tag('غائب', 'da') : a.in > '09:30' ? ui.tag('متأخر', 'wa') : ui.tag('في الموعد', 'ok')) + '</td></tr>').join('') + '</table>' + (A.length ? '' : '<div class="em">لا توجد سجلات</div>') + '</div>',
+      lv: () => '<div class="card"><h3>رصيد الإجازة السنوية</h3><div class="bal"><span>استخدم ' + used + ' من 21</span><div class="pb"><i style="width:' + Math.min(100, used / 21 * 100) + '%"></i></div><span>' + (21 - used) + ' متبقي</span></div></div><div class="card tw"><h3>الطلبات</h3><table><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th></tr>' + L.map(l => '<tr><td>' + l.type + '</td><td>' + l.from + '</td><td>' + l.to + '</td><td>' + l.days + '</td><td>' + ui.tag(l.status, { 'معتمدة': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa' }[l.status]) + '</td></tr>').join('') + '</table>' + (L.length ? '' : '<div class="em">لا توجد طلبات</div>') + '</div>',
+      py: () => { const ins = e.salary * 0.11; return '<div class="card"><h3>الراتب الحالي</h3>' + kv([['الأساسي', ui.money(e.salary)], ['البدلات', ui.money(e.allow)], ['التأمينات (11%)', ui.money(ins)], ['الصافي التقريبي', ui.money(e.salary + (e.allow || 0) - ins)]]) + '</div><div class="card tw"><h3>تعديلات الشهور</h3><table><tr><th>الشهر</th><th>مكافأة</th><th>أيام غياب</th><th>خصومات أخرى</th><th>الصافي</th></tr>' + P.map(p => '<tr><td>' + p.month + '</td><td>' + ui.money(p.bonus) + '</td><td>' + p.absent + '</td><td>' + ui.money(p.other) + '</td><td class="net">' + ui.money(e.salary + (e.allow || 0) + p.bonus - ins - p.absent * e.salary / 30 - p.other) + '</td></tr>').join('') + '</table>' + (P.length ? '' : '<div class="em">لا توجد تعديلات مسجلة. تُضاف من صفحة الرواتب.</div>') + '</div>'; },
+      pf: () => '<div class="card"><h3>متوسط التقييم</h3>' + (R.length ? '<b style="font-size:28px">' + avg.toFixed(1) + '</b> ' + ui.stars(avg) + ' <span style="color:var(--mu)">(' + R.length + ' تقييم)</span>' : '<div class="em">لا توجد تقييمات. أضف من صفحة <a href="#performance" style="color:var(--ac)">تقييم الأداء</a>.</div>') + '</div>' + (R.length ? '<div class="card tw"><table><tr><th>الفترة</th><th>الجودة</th><th>التعاون</th><th>الالتزام</th><th>المبادرة</th><th>المتوسط</th><th>ملاحظات</th></tr>' + R.map(r => '<tr><td>' + r.period + '</td><td>' + r.q + '</td><td>' + r.t + '</td><td>' + r.p + '</td><td>' + r.i + '</td><td><b>' + r.avg.toFixed(1) + '</b></td><td>' + esc(r.note || '') + '</td></tr>').join('') + '</table></div>' : ''),
+      tl: () => { const it = T.concat([{ id: '', date: e.hire, type: 'تعيين', text: 'الانضمام للشركة بوظيفة ' + e.title }]).sort((a, b) => b.date < a.date ? -1 : 1); return '<div class="card"><div class="ph" style="margin-bottom:12px"><h3 style="margin:0">السجل الوظيفي</h3><button class="btn sm" data-a="tadd">+ إضافة حدث</button></div><div class="tl">' + it.map(x => '<div data-id="' + x.id + '"><b>' + esc(x.type) + '</b> <small>' + x.date + '</small>' + (x.id ? ' <button class="btn danger sm" data-a="tdel">حذف</button>' : '') + '<div>' + esc(x.text) + '</div></div>').join('') + '</div></div>'; }
+    };
+
+    const av = e.photo ? '<img class="av" alt="" src="' + e.photo + '">' : '<span class="av" style="background:' + ui.color(e) + '">' + esc(e.name.trim()[0]) + '</span>';
+    const kp = (l, v, s, c) => '<div class="card kpi"><span>' + l + '</span><b class="' + (c || '') + '" style="font-size:26px">' + v + '</b><small style="margin:0">' + s + '</small></div>';
+    root.innerHTML =
+      '<div class="bc" style="margin-bottom:10px"><a href="#dashboard">الرئيسية</a> › <a href="#employees">الموظفون</a> › ' + esc(e.name) + '</div>' +
+      '<div class="card pc"><div class="pav">' + av + '<button class="btn ghost sm" data-a="photo">تغيير الصورة</button></div>' +
+      '<div class="pi"><h1>' + esc(e.name) + '</h1><p>' + esc(e.title) + ' • ' + esc(e.dept) + '</p><div class="tg">' + ui.tag(S[0], S[1]) + (e.contractType ? ui.tag(e.contractType, 'mu') : '') + (bad ? ui.tag(bad + ' مستند ناقص', 'da') : '') + '</div><div class="meta"><span>مدة الخدمة: ' + tenure + '</span><span>التعيين: ' + e.hire + '</span>' + (mgr ? '<span>المدير: ' + esc(mgr.name) + '</span>' : '') + (e.phone ? '<span>' + esc(e.phone) + '</span>' : '') + '</div></div>' +
+      '<div class="pcm"><span style="color:var(--mu);font-size:13px">اكتمال الملف ' + comp + '%</span><div class="pb"><i style="width:' + comp + '%"></i></div><div class="acts noprint"><button class="btn ghost sm" data-a="edj">تعديل</button><button class="btn ghost sm" data-a="print">طباعة</button></div></div></div>' +
+      '<div class="stats">' + kp('الحضور هذا الشهر', apct == null ? '—' : apct + '%', pr.length + ' يوم من ' + wd, apct != null && apct < 80 ? 'c-wa' : 'c-ok') + kp('مرات التأخير', late, 'هذا الشهر', late >= 3 ? 'c-wa' : '') + kp('رصيد الإجازة', (21 - used) + ' يوم', 'استخدم ' + used + ' من 21') + kp('تقييم الأداء', R.length ? avg.toFixed(1) + ' / 5' : '—', R.length + ' تقييم') + kp('الراتب', ui.money(e.salary + (e.allow || 0)), 'أساسي + بدلات') + '</div>' +
+      '<div class="pt noprint">' + tabs.map(t => '<button data-t="' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '">' + t[1] + '</button>').join('') + '</div>' + V[tab]();
+
+    if (tab === 'ov' && window.Chart) {
+      Chart.defaults.font.family = 'Cairo';
+      const lab = [], val = [];
+      for (let i = 5; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); const k = d.toISOString().slice(0, 7); lab.push(k); val.push(A.filter(a => a.date.startsWith(k) && a.in).length); }
+      new Chart(root.querySelector('#c1'), { type: 'bar', data: { labels: lab, datasets: [{ data: val, backgroundColor: '#0070f2', borderRadius: 8, maxBarThickness: 36 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } } } });
+      const per = [...new Set(R.map(r => r.period))].sort(), ids = E.filter(x => x.dept === e.dept).map(x => x.id), all = R0.filter(r => ids.indexOf(r.empId) > -1);
+      new Chart(root.querySelector('#c2'), { type: 'line', data: { labels: per, datasets: [{ label: e.name, data: per.map(p => (R.find(r => r.period === p) || {}).avg), borderColor: '#0070f2', tension: .3 }, { label: 'متوسط القسم', data: per.map(p => { const x = all.filter(r => r.period === p); return x.length ? x.reduce((s, r) => s + r.avg, 0) / x.length : null; }), borderColor: '#9aa8b8', borderDash: [5, 4], tension: .3 }] }, options: { maintainAspectRatio: false, scales: { y: { min: 0, max: 5 } } } });
+      const lt = {}; L.filter(l => l.status === 'معتمدة').forEach(l => lt[l.type] = (lt[l.type] || 0) + l.days);
+      new Chart(root.querySelector('#c3'), { type: 'bar', data: { labels: Object.keys(lt), datasets: [{ data: Object.values(lt), backgroundColor: '#0e9f9a', borderRadius: 8, maxBarThickness: 40 }] }, options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } } });
+    }
+
+    const PF = [{ n: 'nid', l: 'الرقم القومي (14 رقم)' }, { n: 'phone', l: 'الموبايل', t: 'tel' }, { n: 'email', l: 'الإيميل', t: 'email' }, { n: 'address', l: 'العنوان' },
+      { n: 'marital', l: 'الحالة الاجتماعية', opts: ['', 'أعزب', 'متزوج', 'مطلق', 'أرمل'] }, { n: 'military', l: 'موقف التجنيد', opts: ['', 'أدى الخدمة', 'معفي', 'مؤجل', 'لا ينطبق'] },
+      { n: 'emergName', l: 'جهة اتصال للطوارئ' }, { n: 'emergPhone', l: 'موبايل الطوارئ', t: 'tel' }, { n: 'emergRel', l: 'صلة القرابة' }];
+    const JF = [{ n: 'title', l: 'المسمى الوظيفي', req: 1 }, { n: 'dept', l: 'القسم', req: 1 }, { n: 'managerId', l: 'المدير المباشر', opts: [['', 'بدون']].concat(E.filter(x => x.id !== id).map(x => [x.id, x.name])) },
+      { n: 'status', l: 'الحالة', opts: [['active', 'نشط'], ['leave', 'في إجازة'], ['terminated', 'منتهي الخدمة']] }, { n: 'hire', l: 'تاريخ التعيين', t: 'date', req: 1 },
+      { n: 'contractType', l: 'نوع العقد', opts: ['', 'دائم', 'محدد المدة', 'تحت التجربة', 'مؤقت'] }, { n: 'contractEnd', l: 'نهاية العقد', t: 'date' }, { n: 'probationEnd', l: 'نهاية فترة التجربة', t: 'date' },
+      { n: 'salary', l: 'الراتب الأساسي', t: 'number', req: 1 }, { n: 'allow', l: 'البدلات', t: 'number' }, { n: 'insuranceNo', l: 'رقم التأمينات' }, { n: 'bank', l: 'البنك' }, { n: 'iban', l: 'رقم الحساب (IBAN)' }];
+    const save = async (o, msg) => { await store.update('employees', id, HR.fixEmp(Object.assign({}, e, o))); ui.toast(msg || 'تم الحفظ'); HR.refresh(); };
+    const read = f => new Promise(r => { const x = new FileReader(); x.onload = () => r(x.result); x.readAsDataURL(f); });
+    const pick = (accept, cb) => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => i.files[0] && cb(i.files[0]); i.click(); };
+    const putDoc = async (k, patch) => { const d = D.find(x => x.type === k); if (d) await store.update('documents', d.id, patch); else await store.create('documents', Object.assign({ empId: id, type: k, received: '', expiry: '' }, patch)); HR.refresh(); };
+
+    root.onclick = async ev => {
+      const b = ev.target.closest('[data-a],[data-t]'); if (!b) return;
+      if (b.dataset.t) { st.ptab = b.dataset.t; HR.refresh(); return; }
+      const a = b.dataset.a, tr = b.closest('tr') || b.closest('[data-id]'), k = tr && tr.dataset.k, dt = HR.docTypes.find(x => x.k === k);
+      if (a === 'print') window.print();
+      else if (a === 'photo') pick('image/*', async f => { const img = new Image(); img.onload = async () => { const s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 240; c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 240, 240); await store.update('employees', id, { photo: c.toDataURL('image/jpeg', .82) }); ui.toast('تم تحديث الصورة'); HR.refresh(); }; img.src = URL.createObjectURL(f); });
+      else if (a === 'edp') { const o = await ui.form('تعديل البيانات الشخصية', PF, e); if (o) save(o); }
+      else if (a === 'edj') { const o = await ui.form('تعديل بيانات الوظيفة', JF, e); if (o) save(o); }
+      else if (a === 'dedit') { const d = D.find(x => x.type === k) || {}; const f = [{ n: 'received', l: 'تاريخ الاستلام', t: 'date', req: 1 }]; if (dt.x) f.push({ n: 'expiry', l: 'تاريخ الانتهاء', t: 'date' }); f.push({ n: 'note', l: 'ملاحظة' }); const o = await ui.form(dt.l, f, Object.assign({ received: td }, d)); if (o) { await putDoc(k, o); ui.toast('تم الحفظ'); } }
+      else if (a === 'dup') pick('image/*,application/pdf', async f => { if (['application/pdf', 'image/jpeg', 'image/png'].indexOf(f.type) < 0) return ui.toast('النوع غير مسموح. الملفات المسموحة: PDF أو JPG أو PNG'); if (f.size > HR.files.max) return ui.toast('الملف أكبر من الحد المسموح (' + Math.round(HR.files.max / 1024) + ' كيلوبايت)'); const d = D.find(x => x.type === k); ui.toast('جاري الرفع...'); putDoc(k, { file: await HR.files.upload(id, k, f), fname: f.name, received: (d && d.received) || td }); });
+      else if (a === 'dview') { const d = D.find(x => x.type === k); window.open(await HR.files.url(d.file)); }
+      else if (a === 'ddel') { if (confirm('حذف سجل هذا المستند؟')) { await store.remove('documents', D.find(x => x.type === k).id); HR.refresh(); } }
+      else if (a === 'tadd') { const o = await ui.form('حدث جديد', [{ n: 'date', l: 'التاريخ', t: 'date', req: 1 }, { n: 'type', l: 'النوع', opts: ['ترقية', 'تغيير راتب', 'إنذار', 'دورة تدريبية', 'ملاحظة', 'أخرى'] }, { n: 'text', l: 'التفاصيل', req: 1 }], { date: td }); if (o) { o.empId = id; await store.create('timeline', o); HR.refresh(); } }
+      else if (a === 'tdel') { await store.remove('timeline', tr.dataset.id); HR.refresh(); }
+    };
+  }
+};
