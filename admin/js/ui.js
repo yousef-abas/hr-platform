@@ -15,6 +15,9 @@
     userplus: '<circle cx="10" cy="8" r="3.5"/><path d="M3 20c.6-3.6 3.2-5.5 7-5.5M18 14v6M15 17h6"/>',
     star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    shield: '<path d="M12 3l8 3v6c0 4.500-3.400 8-8 9-4.600-1-8-4.500-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+    upload: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.500 4.500"/>'
   };
   const icon = n => '<svg class="ic" viewBox="0 0 24 24">' + (IC[n] || '') + '</svg>';
@@ -36,9 +39,9 @@
     return '<header class="ph"><div><div class="bc"><a href="#dashboard">الرئيسية</a> › ' + h + '</div><h1>' + h + '</h1><p>' + sub + '</p></div><div class="tools">' + (tools || '') + '</div></header>';
   }
   function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2200); }
-  function modal(title, html) {
+  function modal(title, html, wide) {
     const o = document.createElement('div'); o.className = 'mo';
-    o.innerHTML = '<div class="md"><h3>' + title + '</h3><div class="mb">' + html + '</div></div>';
+    o.innerHTML = '<div class="md"' + (wide ? ' style="width:min(980px,100%)"' : '') + '><h3>' + title + '</h3><div class="mb">' + html + '</div></div>';
     const close = () => o.remove();
     o.addEventListener('mousedown', e => { if (e.target === o) close(); });
     document.body.append(o);

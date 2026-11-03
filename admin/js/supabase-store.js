@@ -2,10 +2,12 @@
 (function () {
   const H = window.HR, C = window.HR_CONFIG || {};
   if (!C.supabaseUrl || !C.supabaseKey || !window.supabase) return;
-  const sb = window.supabase.createClient(C.supabaseUrl, C.supabaseKey);
+  // تنظيف الرابط لو اتلصق ومعاه /rest/v1 أو / زيادة في آخره
+  const URL_CLEAN = String(C.supabaseUrl).trim().replace(/\/+$/, '').replace(/\/(rest|auth)\/v1$/, '').replace(/\/+$/, '');
+  const sb = window.supabase.createClient(URL_CLEAN, String(C.supabaseKey).trim());
   H.mode = 'supabase';
 
-  const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline' };
+  const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline', profiles: 'profiles' };
   const COLS = {
     employees: 'id name title dept phone email salary allowances hire status nid birth gender gov marital military address emerg_name emerg_phone emerg_rel contract_type contract_end probation_end insurance_no bank iban manager_id photo',
     attendance: 'id emp_id date check_in check_out',
@@ -14,7 +16,8 @@
     payroll: 'id emp_id month bonus absent other',
     reviews: 'id emp_id period q t p i avg note',
     documents: 'id emp_id type received expiry note file fname',
-    timeline: 'id emp_id date type text'
+    timeline: 'id emp_id date type text',
+    profiles: 'id email full_name role employee_id'
   };
   Object.keys(COLS).forEach(k => COLS[k] = COLS[k].split(' '));
   const REN = { employees: { allow: 'allowances' }, attendance: { in: 'check_in', out: 'check_out' }, leaves: { from: 'from_date', to: 'to_date' } };
@@ -49,6 +52,15 @@
     },
     async create(t, row) { const { data, error } = await sb.from(TABLE[t]).insert(toDb(t, row)).select().single(); fail(error); return fromDb(t, data); },
     async update(t, id, patch) { const p = toDb(t, patch); delete p.id; const { data, error } = await sb.from(TABLE[t]).update(p).eq('id', id).select().single(); fail(error); return fromDb(t, data); },
+    async createMany(t, rows) {
+      let out = [];
+      for (let i = 0; i < rows.length; i += 100) {
+        const { data, error } = await sb.from(TABLE[t]).insert(rows.slice(i, i + 100).map(r => toDb(t, r))).select();
+        fail(error); out = out.concat(data);
+      }
+      return out.map(r => fromDb(t, r));
+    },
+    async audit(limit) { const { data, error } = await sb.from('audit_log').select('*').order('at', { ascending: false }).limit(limit || 300); fail(error); return data; },
     async remove(t, id) { const { error } = await sb.from(TABLE[t]).delete().eq('id', id); fail(error); }
   };
 
@@ -71,13 +83,19 @@
       if (data.session) await this.load(data.session.user);
     },
     async load(u) {
-      const { data, error } = await sb.from('profiles').select('*').eq('id', u.id).single();
+      const { data, error } = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
       fail(error);
+      if (!data) throw new Error('الحساب موجود لكن ملفه الشخصي غير مُنشأ. شغّل سكربت الجداول وسكربت إنشاء الملفات الناقصة');
       H.user = { id: u.id, email: u.email, name: data.full_name || u.email, role: data.role };
     },
     async login(email, pw) {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-      if (error) throw new Error('الإيميل أو كلمة المرور غير صحيحة');
+      if (error) {
+        const m = (error.message || '').toLowerCase();
+        if (m.indexOf('invalid login') > -1) throw new Error('الإيميل أو كلمة المرور غير صحيحة');
+        if (m.indexOf('not confirmed') > -1) throw new Error('الحساب لم يتم تأكيده. في Supabase افتح المستخدم واضغط Confirm');
+        throw new Error('تعذر تسجيل الدخول: ' + error.message);
+      }
       await this.load(data.user);
     },
     async logoutSoft() { await sb.auth.signOut(); H.user = null; },

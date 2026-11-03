@@ -20,7 +20,7 @@ HR.pages.employees = {
     const rows = E.filter(e => (e.name + e.title + e.dept).includes(q) && (!d || e.dept === d));
     const S = { active: ['نشط', 'ok'], leave: ['في إجازة', 'wa'], terminated: ['منتهي', 'mu'] };
     root.innerHTML = ui.head('الموظفون', E.length + ' في السجل',
-      '<input id="q" placeholder="بحث بالاسم أو الوظيفة" value="' + ui.esc(q) + '"><select id="d"><option value="">كل الأقسام</option>' + depts.map(x => '<option' + (x === d ? ' selected' : '') + '>' + ui.esc(x) + '</option>').join('') + '</select><button class="btn ghost" data-a="csv">تصدير</button><button class="btn" data-a="add">+ موظف جديد</button>') +
+      '<input id="q" placeholder="بحث بالاسم أو الوظيفة" value="' + ui.esc(q) + '"><select id="d"><option value="">كل الأقسام</option>' + depts.map(x => '<option' + (x === d ? ' selected' : '') + '>' + ui.esc(x) + '</option>').join('') + '</select><button class="btn ghost" data-a="imp">استيراد Excel</button><button class="btn ghost" data-a="csv">تصدير</button><button class="btn" data-a="add">+ موظف جديد</button>') +
       '<div class="card tw"><table><tr><th>الموظف</th><th>القسم</th><th>الموبايل</th><th>الراتب</th><th>التعيين</th><th>الحالة</th><th></th></tr>' +
       rows.map(e => '<tr data-id="' + e.id + '"><td class="lk" data-a="view">' + ui.who(e) + '</td><td>' + ui.esc(e.dept) + '</td><td>' + ui.esc(e.phone) + '</td><td>' + ui.money(e.salary) + '</td><td>' + e.hire + '</td><td>' + ui.tag(...(S[e.status] || S.active)) + '</td><td><button class="btn sm" data-a="view">الملف</button> <button class="btn ghost sm" data-a="edit">تعديل</button> <button class="btn danger sm" data-a="del">حذف</button></td></tr>').join('') +
       '</table>' + (rows.length ? '' : '<div class="em">لا توجد نتائج. جرّب بحثًا آخر أو أضف موظفًا.</div>') + '</div>';
@@ -31,6 +31,7 @@ HR.pages.employees = {
       const b = e.target.closest('[data-a]'); if (!b) return;
       const id = b.closest('tr') && b.closest('tr').dataset.id, a = b.dataset.a;
       if (a === 'view') { location.hash = 'profile-' + id; return; }
+      if (a === 'imp') { HR.importEmployees(); return; }
       if (a === 'add') { const o = await ui.form('موظف جديد', HR.empFields, { status: 'active', allow: 0, hire: ui.today() }); if (o) { await store.create('employees', num(o)); ui.toast('تمت إضافة الموظف'); HR.refresh(); } }
       if (a === 'edit') { const cur = E.find(x => x.id === id); const o = await ui.form('تعديل بيانات الموظف', HR.empFields, cur); if (o) { await store.update('employees', id, num(o)); ui.toast('تم حفظ التعديل'); HR.refresh(); } }
       if (a === 'del' && confirm('حذف هذا الموظف نهائيًا؟')) { await store.remove('employees', id); ui.toast('تم الحذف'); HR.refresh(); }

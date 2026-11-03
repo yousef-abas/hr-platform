@@ -1,10 +1,12 @@
 (function () {
   const H = window.HR, ui = H.ui;
   const keys = ['dashboard', 'employees', 'attendance', 'leaves', 'payroll', 'recruitment', 'performance'];
+  const ADMIN_ONLY = ['users', 'audit'];
   const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية' };
   window.addEventListener('unhandledrejection', e => { ui.toast('تعذر تنفيذ العملية: ' + ((e.reason && e.reason.message) || e.reason)); });
 
   function start() {
+    if (H.user.role === 'admin') ADMIN_ONLY.forEach(k => keys.push(k));
     const root = document.getElementById('root'), top = document.getElementById('top'), tabs = document.getElementById('tabs');
     top.innerHTML = '<a class="brand" href="#dashboard"><i>HR</i><b>نظام الموارد البشرية</b></a><div class="sp"></div>' +
       '<div class="srch">' + ui.icon('search') + '<input id="sr" placeholder="ابحث عن موظف" autocomplete="off"><div id="sres"></div></div><div class="sp"></div>' +
