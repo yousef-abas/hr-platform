@@ -3,6 +3,6 @@
    املأها من Supabase: Project Settings ← API.
    مسموح تحط هنا المفتاح العام فقط (sb_publishable_... أو anon). ممنوع أي مفتاح secret أو service_role نهائيًا. */
 window.HR_CONFIG = {
-  supabaseUrl: '',
+  supabaseUrl: 'https://jexnwimaemwrimqxulij.supabase.co/rest/v1/',
   supabaseKey: 'sb_publishable_-Qkydd2vsflQL2bYbcYAzw_EWt0RH8z'
 };
