@@ -66,5 +66,11 @@
     async reset() { this.db = seed(); this.save(); }
   };
   Local.load();
-  window.HR = { store: Local, state: {}, pages: {} };
+  const files = {
+    max: 250 * 1024,
+    note: 'رفع الملفات هنا للتجربة فقط (حد أقصى 250 كيلوبايت للملف). التخزين الحقيقي والآمن يتفعل مع ربط قاعدة البيانات.',
+    upload(empId, key, f) { return new Promise(r => { const x = new FileReader(); x.onload = () => r(x.result); x.readAsDataURL(f); }); },
+    async url(ref) { const b = await (await fetch(ref)).blob(); return URL.createObjectURL(b); }
+  };
+  window.HR = { store: Local, files, state: {}, pages: {}, mode: 'local' };
 })();

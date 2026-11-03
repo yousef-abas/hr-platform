@@ -143,3 +143,12 @@ img.av{object-fit:cover}
 .tl>div::before{content:"";position:absolute;right:-25px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--ac);box-shadow:0 0 0 3px var(--sf)}
 .tl small{color:var(--mu)}
 @media print{#chrome,.tools,.noprint,.pt,.hero{display:none!important}body:has(.mo) #root,body:has(.mo) #chrome{display:none!important}.mo{position:static;background:none;display:block}.acts{display:none}.card{box-shadow:none;border:1px solid var(--ln)}}
+
+#login{position:fixed;inset:0;z-index:120;background:var(--bg);display:grid;place-items:center;padding:16px}
+.lc{background:#fff;border-radius:16px;box-shadow:var(--sh);padding:32px;width:min(400px,100%)}
+.lc .brand{margin-bottom:14px}
+.lc h2{margin:0 0 4px}
+.lm{color:var(--mu);margin:0 0 16px}
+.lc label{display:block;font-size:13px;color:var(--mu);margin-bottom:12px}
+.lc input{width:100%;display:block;margin-top:3px}
+.me .btn{padding:3px 12px;font-size:13px}
