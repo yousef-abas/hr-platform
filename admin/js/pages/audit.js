@@ -21,6 +21,6 @@ HR.pages.audit = {
         return '<tr><td>' + new Date(r.at).toLocaleString('ar-EG') + '</td><td>' + esc(r.user_email || 'النظام') + '</td><td>' + ui.tag(...A[r.action]) + '</td><td>' + (TB[r.table_name] || r.table_name) + '</td><td>' + esc(who(r) || '—') + '</td><td style="white-space:normal;min-width:260px">' + esc(det) + '</td></tr>';
       }).join('') + '</table>' + (rows.length ? '' : '<div class="em">لا توجد عمليات مطابقة</div>') + '</div>';
     root.querySelector('#atb').onchange = e => { st.atb = e.target.value; HR.refresh(); };
-    root.querySelector('#aq').oninput = e => { st.aq = e.target.value; HR.refresh().then(() => { const i = document.querySelector('#aq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); };
+    root.querySelector('#aq').oninput = ui.debounce(e => { st.aq = e.target.value; HR.refresh().then(() => { const i = document.querySelector('#aq'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); });
   }
 };

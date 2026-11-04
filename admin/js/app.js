@@ -15,12 +15,12 @@
     tabs.innerHTML = keys.map(k => '<a href="#' + k + '" data-k="' + k + '">' + ui.icon(H.pages[k].icon) + H.pages[k].title + '</a>').join('');
     const lo = document.getElementById('lo'); if (lo) lo.onclick = () => H.auth.logout();
     const sr = document.getElementById('sr'), res = document.getElementById('sres');
-    sr.oninput = async () => {
+    sr.oninput = ui.debounce(async () => {
       const v = sr.value.trim(); if (!v) { res.style.display = 'none'; return; }
       const E = (await H.store.list('employees')).filter(e => (e.name + e.title + e.dept).includes(v)).slice(0, 6);
       res.innerHTML = E.length ? E.map(e => '<div data-n="' + ui.esc(e.name) + '">' + ui.who(e) + '</div>').join('') : '<div>لا توجد نتائج</div>';
       res.style.display = 'block';
-    };
+    }, 250);
     res.onmousedown = e => {
       const d = e.target.closest('[data-n]'); if (!d) return;
       H.state.q = d.dataset.n; sr.value = ''; res.style.display = 'none';
@@ -30,6 +30,7 @@
     async function go() {
       const h = location.hash.slice(1), pm = /^profile-([a-z0-9-]+)$/.exec(h);
       const k = pm ? 'employees' : (keys.indexOf(h) > -1 ? h : keys[0]);
+      if (k !== 'payroll') H.state.pview = 'run';
       tabs.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.k === k));
       const sec = document.createElement('section');
       root.replaceChildren(sec);

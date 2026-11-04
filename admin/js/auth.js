@@ -19,7 +19,14 @@
     });
   }
   H.gate = async function () {
-    try { await H.auth.ready(); } catch (e) { H.user = null; }
+    try { await H.auth.ready(); }
+    catch (e) {
+      H.user = null;
+      if (H.mode === 'error') {
+        document.body.insertAdjacentHTML('beforeend', '<div id="login"><div class="lc"><div class="brand"><i>HR</i><b>نظام الموارد البشرية</b></div><h2>تعذر تشغيل النظام</h2><p class="lm" style="color:var(--da)">' + e.message + '</p><button class="btn" onclick="location.reload()">إعادة المحاولة</button></div></div>');
+        await new Promise(() => {});
+      }
+    }
     let msg = '';
     while (!H.user || ALLOWED.indexOf(H.user.role) < 0) {
       if (H.user) { await H.auth.logoutSoft(); msg = 'هذا الحساب غير مصرح له بدخول لوحة الإدارة'; }

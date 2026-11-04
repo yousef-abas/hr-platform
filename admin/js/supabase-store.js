@@ -1,23 +1,31 @@
 /* طبقة البيانات الحقيقية (Supabase). تحل محل التخزين المحلي لما يتملأ js/config.js */
 (function () {
   const H = window.HR, C = window.HR_CONFIG || {};
-  if (!C.supabaseUrl || !C.supabaseKey || !window.supabase) return;
+  if (!C.supabaseUrl || !C.supabaseKey) return;           // وضع تجريبي صريح: الإعداد فاضي
+  if (!window.supabase) {                                 // الإعداد موجود لكن المكتبة ما اتحملتش: ممنوع الدخول
+    H.mode = 'error';
+    H.auth = { async ready() { throw new Error('تعذر تحميل مكتبة الاتصال بقاعدة البيانات. اتأكد من الاتصال بالإنترنت وحدّث الصفحة.'); }, async logoutSoft() {}, async logout() {} };
+    return;
+  }
   // تنظيف الرابط لو اتلصق ومعاه /rest/v1 أو / زيادة في آخره
   const URL_CLEAN = String(C.supabaseUrl).trim().replace(/\/+$/, '').replace(/\/(rest|auth)\/v1$/, '').replace(/\/+$/, '');
   const sb = window.supabase.createClient(URL_CLEAN, String(C.supabaseKey).trim());
   H.mode = 'supabase';
 
-  const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline', profiles: 'profiles' };
+  const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline', profiles: 'profiles', settings: 'settings', runs: 'payroll_runs', lines: 'payroll_lines' };
   const COLS = {
-    employees: 'id name title dept phone email salary allowances hire status nid birth gender gov marital military address emerg_name emerg_phone emerg_rel contract_type contract_end probation_end insurance_no bank iban manager_id photo',
+    employees: 'id name title dept phone email salary allowances hire status nid birth gender gov marital military address emerg_name emerg_phone emerg_rel contract_type contract_end probation_end insurance_no bank iban manager_id photo insured',
     attendance: 'id emp_id date check_in check_out',
     leaves: 'id emp_id type from_date to_date days note status',
     candidates: 'id name role stage phone',
-    payroll: 'id emp_id month bonus absent other',
+    payroll: 'id emp_id month bonus absent other ot_normal ot_night ot_rest ot_holiday advance penalty note',
     reviews: 'id emp_id period q t p i avg note',
     documents: 'id emp_id type received expiry note file fname',
     timeline: 'id emp_id date type text',
-    profiles: 'id email full_name role employee_id'
+    profiles: 'id email full_name role employee_id',
+    settings: 'id key value',
+    runs: 'id month status total_net total_cost emp_count rules_snapshot state_snapshot approved_at approved_by reopen_reason',
+    lines: 'id run_id emp_id net data'
   };
   Object.keys(COLS).forEach(k => COLS[k] = COLS[k].split(' '));
   const REN = { employees: { allow: 'allowances' }, attendance: { in: 'check_in', out: 'check_out' }, leaves: { from: 'from_date', to: 'to_date' } };
@@ -38,7 +46,8 @@
     COLS[t].forEach(c => { if (c in row) r[rev[c] || camel(c)] = row[c] === null ? '' : row[c]; });
     return r;
   }
-  const fail = e => { if (e) throw new Error(e.message || 'خطأ في الاتصال بقاعدة البيانات'); };
+  const MSG = { '23505': 'القيمة مكررة (رقم قومي أو سجل موجود بالفعل)', '23514': 'قيمة غير مسموحة في أحد الحقول', '23P01': 'الإجازة متداخلة مع إجازة أخرى لنفس الموظف', '23503': 'السجل مرتبط ببيانات أخرى', '42501': 'ليس لديك صلاحية لهذه العملية', 'PGRST301': 'انتهت الجلسة، سجّل الدخول من جديد' };
+  const fail = e => { if (e) throw new Error(MSG[e.code] || e.message || 'خطأ في الاتصال بقاعدة البيانات'); };
 
   H.store = {
     async list(t) {

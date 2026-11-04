@@ -30,7 +30,7 @@ HR.pages.dashboard = {
     const d = {}; act.forEach(e => d[e.dept] = (d[e.dept] || 0) + 1);
     new Chart(root.querySelector('#c1'), { type: 'doughnut', data: { labels: Object.keys(d), datasets: [{ data: Object.values(d), backgroundColor: ['#0070f2', '#0e9f9a', '#c35500', '#a9306f', '#5b738b'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right' } } } });
     const lab = [], val = [];
-    for (let i = 6; i >= 0; i--) { const x = new Date(); x.setDate(x.getDate() - i); const s = x.toISOString().slice(0, 10); lab.push(s.slice(5)); val.push(A.filter(a => a.date === s && a.in).length); }
+    for (let i = 6; i >= 0; i--) { const x = new Date(); x.setDate(x.getDate() - i); const s = ui.iso(x); lab.push(s.slice(5)); val.push(A.filter(a => a.date === s && a.in).length); }
     new Chart(root.querySelector('#c2'), { type: 'bar', data: { labels: lab, datasets: [{ data: val, backgroundColor: '#0070f2', borderRadius: 8, maxBarThickness: 36 }] }, options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eef0f6' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
   }
 };

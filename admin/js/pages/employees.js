@@ -7,6 +7,7 @@ HR.empFields = [
 ];
 HR.fixEmp = o => {
   o.salary = +o.salary; o.allow = +o.allow || 0;
+  if (o.insured !== undefined) o.insured = !(o.insured === false || o.insured === 'false');
   const r = o.nid && HR.ui.nid(o.nid); if (r) Object.assign(o, r);
   return o;
 };
@@ -25,7 +26,7 @@ HR.pages.employees = {
       rows.map(e => '<tr data-id="' + e.id + '"><td class="lk" data-a="view">' + ui.who(e) + '</td><td>' + ui.esc(e.dept) + '</td><td>' + ui.esc(e.phone) + '</td><td>' + ui.money(e.salary) + '</td><td>' + e.hire + '</td><td>' + ui.tag(...(S[e.status] || S.active)) + '</td><td><button class="btn sm" data-a="view">الملف</button> <button class="btn ghost sm" data-a="edit">تعديل</button> <button class="btn danger sm" data-a="del">حذف</button></td></tr>').join('') +
       '</table>' + (rows.length ? '' : '<div class="em">لا توجد نتائج. جرّب بحثًا آخر أو أضف موظفًا.</div>') + '</div>';
     const num = o => HR.fixEmp(o);
-    root.querySelector('#q').oninput = e => { st.q = e.target.value; HR.refresh().then(() => { const i = document.querySelector('#q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); };
+    root.querySelector('#q').oninput = ui.debounce(e => { st.q = e.target.value; HR.refresh().then(() => { const i = document.querySelector('#q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }); });
     root.querySelector('#d').onchange = e => { st.dept = e.target.value; HR.refresh(); };
     root.onclick = async e => {
       const b = e.target.closest('[data-a]'); if (!b) return;

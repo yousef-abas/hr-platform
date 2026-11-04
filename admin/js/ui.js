@@ -2,7 +2,8 @@
   const H = window.HR;
   const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const money = n => Math.round(n || 0).toLocaleString('ar-EG') + ' ج.م';
-  const today = () => new Date().toISOString().slice(0, 10);
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const today = () => iso(new Date());
   const days = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5) + 1;
   const tag = (t, c) => '<span class="tag ' + c + '">' + esc(t) + '</span>';
   const COL = ['#0070f2', '#0e9f9a', '#d9822b', '#c2417a', '#2f7de1', '#5a8f29'];
@@ -70,5 +71,6 @@
     return { birth: (c + +n.slice(1, 3)) + '-' + n.slice(3, 5) + '-' + n.slice(5, 7), gender: (+n[12]) % 2 ? 'ذكر' : 'أنثى', gov: GOV[n.slice(7, 9)] || '' };
   }
   const color = e => COL[(e.name || '').length % COL.length];
-  H.ui = { esc, money, today, days, tag, who, head, toast, modal, form, csv, icon, stars, drawer, color, nid };
+  const debounce = (fn, ms) => { let t; return function () { const a = arguments, c = this; clearTimeout(t); t = setTimeout(() => fn.apply(c, a), ms || 250); }; };
+  H.ui = { esc, money, today, days, tag, who, head, toast, modal, form, csv, icon, stars, drawer, color, nid, debounce, iso };
 })();
