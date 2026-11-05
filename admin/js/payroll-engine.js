@@ -9,6 +9,7 @@
     hoursPerDay: 8,
     dayValueBase: 'basic+allow',       // basic | basic+allow
     rounding: 'two',                   // none | two | integer
+    company: { name: '' },
     weekend: [5, 6],                   // 0 أحد ... 5 جمعة 6 سبت
     holidays: [],                      // [{date:'2026-10-06', name:'...'}]
     items: [],                         // بنود إضافية على كل الموظفين
@@ -37,6 +38,16 @@
   };
   const mins = hhmm => { const a = String(hhmm || '').split(':'); return a.length < 2 ? null : +a[0] * 60 + +a[1]; };
   const rnd = (n, mode) => mode === 'integer' ? Math.round(n) : mode === 'none' ? n : Math.round(n * 100) / 100;
+
+  P.monthIdx = (a, b) => (+b.slice(0, 4) - +a.slice(0, 4)) * 12 + (+b.slice(5, 7) - +a.slice(5, 7));
+  P.prevMonth = m => { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1; if (mo < 1) { mo = 12; y--; } return y + '-' + pad(mo); };
+  /* قسط السلفة المستحق في شهر معين (آخر قسط بياخد الباقي عشان المجموع يطلع مظبوط) */
+  P.loanDue = function (l, month) {
+    const n = Math.max(1, +l.installments || 1), idx = P.monthIdx(l.startMonth, month), total = Number(l.total) || 0;
+    if (l.status === 'stopped' || idx < 0 || idx >= n) return { amount: 0, idx, n };
+    const inst = Math.round(total / n * 100) / 100;
+    return { amount: idx === n - 1 ? Math.round((total - inst * (n - 1)) * 100) / 100 : inst, idx, n };
+  };
 
   const ZERO = { bonus: 0, absent: 0, other: 0, otNormal: 0, otNight: 0, otRest: 0, otHoliday: 0, advance: 0, penalty: 0 };
 
@@ -122,6 +133,8 @@
     add('ded', 'إجازة بدون مرتب', unpaid * dayValue, unpaid + ' يوم');
     if (A.auto && A.lateMode === 'tiers') add('ded', 'خصم التأخير', lateDeductDays * dayValue, lateDays + ' مرات');
     if (A.auto && A.lateMode === 'perMinute') add('ded', 'خصم التأخير', lateMinutesTotal * (dayValue / ((num(R.hoursPerDay) || 8) * 60)) * num(A.perMinuteFactor || 1), lateMinutesTotal + ' دقيقة');
+    let loanTotal = 0;
+    if (ctx.month) (ctx.loans || []).forEach(l => { const d = P.loanDue(l, ctx.month); if (d.amount) { loanTotal += d.amount; add('ded', 'قسط سلفة' + (l.title ? ': ' + l.title : ''), d.amount, 'قسط ' + (d.idx + 1) + ' من ' + d.n); } });
     add('ded', 'سلفة', num(adj.advance)); add('ded', 'جزاء', num(adj.penalty)); add('ded', 'خصومات أخرى', num(adj.other));
 
     const ded = lines.filter(l => l.t === 'ded').reduce((s, l) => s + l.amount, 0);
@@ -129,7 +142,7 @@
     if (net < 0) flags.push('الصافي بالسالب');
     if (I.enabled && emp.insured !== false && basic + insurableExtra + (I.includeAllowances ? allow : 0) < num(I.minWage)) flags.push('الأجر أقل من الحد الأدنى للتأمينات');
     if (!basic) flags.push('لا يوجد راتب أساسي');
-    return { lines, gross: rnd(gross, rm), deductions: rnd(ded, rm), insurance: rnd(insurance, rm), tax: rnd(tax, rm), net, employerIns: rnd(employerIns, rm), cost: rnd(gross + employerIns, rm), flags,
+    return { lines, gross: rnd(gross, rm), deductions: rnd(ded, rm), insurance: rnd(insurance, rm), tax: rnd(tax, rm), net, employerIns: rnd(employerIns, rm), cost: rnd(gross + employerIns, rm), insWage: rnd(insWage, rm), ot: rnd(otTotal, rm), loan: rnd(loanTotal, rm), flags,
       meta: { absentDays, absentAuto, lateDays, lateMin: lateMinutesTotal, unpaid, otHours: otH.normal + otH.night + otH.rest + otH.holiday, dayValue: rnd(dayValue, 'two') } };
   };
 

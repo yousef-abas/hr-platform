@@ -57,7 +57,7 @@
 
   const Local = {
     db: null,
-    load() { try { this.db = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!this.db) this.db = seed(); ['employees', 'attendance', 'leaves', 'candidates', 'payroll', 'reviews', 'documents', 'timeline', 'profiles', 'settings', 'runs', 'lines'].forEach(k => { this.db[k] = this.db[k] || []; }); if (!this.db.profiles.length) this.db.profiles = [{ id: 'demo', email: 'demo@local', fullName: 'مدير النظام', role: 'admin', employeeId: '' }]; },
+    load() { try { this.db = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} if (!this.db) this.db = seed(); ['employees', 'attendance', 'leaves', 'candidates', 'payroll', 'reviews', 'documents', 'timeline', 'profiles', 'settings', 'runs', 'lines', 'loans'].forEach(k => { this.db[k] = this.db[k] || []; }); if (!this.db.profiles.length) this.db.profiles = [{ id: 'demo', email: 'demo@local', fullName: 'مدير النظام', role: 'admin', employeeId: '' }]; },
     save() { try { localStorage.setItem(KEY, JSON.stringify(this.db)); } catch (e) {} },
     async list(t) { return this.db[t].map(x => ({ ...x })); },
     async create(t, row) { row = { id: uid(), ...row }; this.db[t].push(row); this.save(); return row; },
