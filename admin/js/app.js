@@ -31,6 +31,7 @@
       const h = location.hash.slice(1), pm = /^profile-([a-z0-9-]+)$/.exec(h);
       const k = pm ? 'employees' : (keys.indexOf(h) > -1 ? h : keys[0]);
       if (k !== 'payroll') H.state.pview = 'run';
+      if (k !== 'leaves') H.state.lview = 'req';
       tabs.querySelectorAll('a').forEach(a => a.classList.toggle('on', a.dataset.k === k));
       const sec = document.createElement('section');
       root.replaceChildren(sec);

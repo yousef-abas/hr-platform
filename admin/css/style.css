@@ -190,3 +190,12 @@ img.av{object-fit:cover}
 .sx-sig{display:flex;justify-content:space-between;margin-top:26px;color:var(--mu);font-size:13px}
 @media print{.slipx{page-break-after:always;border:0;margin:0}.md{box-shadow:none;width:100%!important;padding:0}.mo{padding:0}}
 .al>span:first-child{font-weight:800}
+/* تقويم الفريق */
+table.cal{border-collapse:separate;border-spacing:2px;font-size:12px}
+table.cal th{background:none;padding:2px 0;text-align:center;min-width:26px}table.cal th small{display:block;color:var(--mu);font-weight:400}
+table.cal td{padding:0;height:26px;min-width:26px;border:0;border-radius:5px;background:#f0f2f5}
+table.cal td.nm{background:none;padding:0 8px 0 12px;white-space:nowrap;font-weight:600;position:sticky;right:0;background:#fff}
+table.cal th.wk,table.cal td.wk{background:#e4e8ed}table.cal td.hd{background:#fff3c4}
+table.cal td.lv{background:var(--c)}table.cal td.lv.pd{background:repeating-linear-gradient(45deg,var(--c),var(--c) 4px,#fff 4px,#fff 7px)}
+table.cal tr.sum td{background:none;text-align:center;font-weight:700;color:var(--mu)}
+table.cal tr:hover>td{background:inherit}table.cal tr:hover>td.lv{background:var(--c)}

@@ -14,9 +14,9 @@
 
   const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline', profiles: 'profiles', settings: 'settings', runs: 'payroll_runs', lines: 'payroll_lines', loans: 'loans' };
   const COLS = {
-    employees: 'id name title dept phone email salary allowances hire status nid birth gender gov marital military address emerg_name emerg_phone emerg_rel contract_type contract_end probation_end insurance_no bank iban manager_id photo insured',
+    employees: 'id name title dept phone email salary allowances hire status nid birth gender gov marital military address emerg_name emerg_phone emerg_rel contract_type contract_end probation_end insurance_no bank iban manager_id photo insured end_date end_reason',
     attendance: 'id emp_id date check_in check_out',
-    leaves: 'id emp_id type from_date to_date days note status',
+    leaves: 'id emp_id type from_date to_date days note status reject_reason decided_by decided_at',
     candidates: 'id name role stage phone',
     payroll: 'id emp_id month bonus absent other ot_normal ot_night ot_rest ot_holiday advance penalty note',
     reviews: 'id emp_id period q t p i avg note',

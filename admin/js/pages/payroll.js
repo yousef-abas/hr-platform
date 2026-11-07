@@ -5,15 +5,16 @@ HR.pages.payroll = {
     if (st.pview === 'rules') return HR.payrollRules(root);
     st.pmonth = st.pmonth || ui.today().slice(0, 7);
     const month = st.pmonth, isAdmin = HR.user.role === 'admin';
-    const [E0, A0, L0, ADJ, RUNS, LINES, LOANS, cfg] = await Promise.all([store.list('employees'), store.list('attendance'), store.list('leaves'), store.list('payroll'), store.list('runs'), store.list('lines'), store.list('loans'), P.load()]);
+    const [E0, A0, L0, ADJ, RUNS, LINES, LOANS, cfg, LRULES] = await Promise.all([store.list('employees'), store.list('attendance'), store.list('leaves'), store.list('payroll'), store.list('runs'), store.list('lines'), store.list('loans'), P.load(), HR.leaves.load()]);
     const T = HR.payrollTools;
     const { rules, state } = cfg, per = P.period(month, rules), today = ui.today();
     const run = RUNS.find(r => r.month === month) || null, status = run ? run.status : 'draft', locked = status === 'approved' || status === 'paid';
     let rows;
     if (locked) rows = LINES.filter(l => l.runId === run.id).map(l => ({ id: l.empId, name: l.data.name, title: l.data.title, dept: l.data.dept, calc: l.data.calc, adj: null }));
-    else rows = E0.filter(e => e.status !== 'terminated' && (!e.hire || e.hire <= per.end)).map(e => {
+    const unpaidTypes = HR.leaves.unpaidTypes(LRULES);
+    if (!locked) rows = E0.filter(e => (!e.hire || e.hire <= per.end) && (e.status !== 'terminated' || (e.endDate && e.endDate >= per.start))).map(e => {
       const adj = ADJ.find(a => a.empId === e.id && a.month === month);
-      return { id: e.id, name: e.name, title: e.title, dept: e.dept, photo: e.photo, adj, calc: P.calc(e, { rules, state, adj, att: A0.filter(a => a.empId === e.id && a.date >= per.start && a.date <= per.end), leaves: L0.filter(l => l.empId === e.id), loans: LOANS.filter(l => l.empId === e.id), month, period: per, today }) };
+      return { id: e.id, name: e.name, title: e.title, dept: e.dept, photo: e.photo, adj, calc: P.calc(e, { rules, state, adj, att: A0.filter(a => a.empId === e.id && a.date >= per.start && a.date <= per.end), leaves: L0.filter(l => l.empId === e.id), loans: LOANS.filter(l => l.empId === e.id), unpaidTypes, month, period: per, today }) };
     });
     rows.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
     const sum = k => rows.reduce((s, r) => s + r.calc[k], 0), tot = { net: sum('net'), cost: sum('cost'), ded: sum('deductions'), gross: sum('gross') };

@@ -29,7 +29,7 @@
     if (rules.attendance.auto) push('موظفون ما عندهمش أي حضور مسجل في الفترة (هيتحسبوا غياب كامل)', rows.filter(r => !A0.some(a => a.empId === r.id && a.in && a.date >= per.start && a.date <= per.end)).map(r => r.name));
     push('موظفون عليهم تنبيهات في الحساب', rows.filter(r => r.calc.flags.length).map(r => r.name + ' (' + r.calc.flags.join('، ') + ')'));
     push('موظفون بدون IBAN أو بنك (مش هيدخلوا ملف التحويل)', rows.filter(r => { const e = E0.find(x => x.id === r.id) || {}; return !e.iban || !e.bank; }).map(r => r.name));
-    push('موظفون جدد في الفترة: الراتب بيتحسب كامل (مفيش توزيع جزئي لحد دلوقتي)', rows.filter(r => { const e = E0.find(x => x.id === r.id) || {}; return e.hire && e.hire > per.start && e.hire <= per.end; }).map(r => r.name));
+    push('موظفون راتبهم جزئي (تعيين أو إنهاء خدمة داخل الفترة): اتحسب بالتناسب تلقائيًا، راجع الأيام', rows.filter(r => r.calc.meta.prorated).map(r => r.name + ' (' + r.calc.meta.prorated.days + ' من ' + r.calc.meta.prorated.of + ' يوم)'));
     return items;
   };
 

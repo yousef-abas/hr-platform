@@ -2,9 +2,9 @@
 HR.payrollRules = async function (root) {
   const { store, ui, state: st } = HR, P = HR.payroll, esc = ui.esc, isAdmin = HR.user.role === 'admin';
   const month = st.pmonth || ui.today().slice(0, 7);
-  const [E0, A0, L0, ADJ, LOANS, cfg] = await Promise.all([store.list('employees'), store.list('attendance'), store.list('leaves'), store.list('payroll'), store.list('loans'), P.load()]);
+  const [E0, A0, L0, ADJ, LOANS, cfg, LRULES] = await Promise.all([store.list('employees'), store.list('attendance'), store.list('leaves'), store.list('payroll'), store.list('loans'), P.load(), HR.leaves.load()]);
   const W = { rules: JSON.parse(JSON.stringify(cfg.rules)), state: JSON.parse(JSON.stringify(cfg.state)) };
-  const emps = E0.filter(e => e.status !== 'terminated');
+  const emps = E0.filter(e => e.status !== 'terminated'), unpaidTypes = HR.leaves.unpaidTypes(LRULES);
   let unlocked = false, pv = emps.length ? emps[0].id : '';
   const get = p => p.split('.').reduce((o, k) => o == null ? o : o[k], W);
   const set = (p, v) => { const k = p.split('.'), last = k.pop(); k.reduce((o, x) => o[x], W)[last] = v; };
@@ -16,7 +16,7 @@ HR.payrollRules = async function (root) {
   const del = (arr, i, lock) => (!isAdmin || lock) ? '' : '<button class="btn danger sm" data-del="' + arr + ':' + i + '">حذف</button>';
   const add = (arr, t, lock) => (!isAdmin || lock) ? '' : '<button class="btn ghost sm" data-add="' + arr + '">' + t + '</button>';
 
-  const totals = (rules, state) => { const per = P.period(month, rules); return emps.reduce((o, e) => { const c = P.calc(e, { rules, state, adj: ADJ.find(a => a.empId === e.id && a.month === month), att: A0.filter(a => a.empId === e.id && a.date >= per.start && a.date <= per.end), leaves: L0.filter(l => l.empId === e.id), loans: LOANS.filter(l => l.empId === e.id), month, period: per, today: ui.today() }); o.net += c.net; o.cost += c.cost; return o; }, { net: 0, cost: 0 }); };
+  const totals = (rules, state) => { const per = P.period(month, rules); return emps.reduce((o, e) => { const c = P.calc(e, { rules, state, adj: ADJ.find(a => a.empId === e.id && a.month === month), att: A0.filter(a => a.empId === e.id && a.date >= per.start && a.date <= per.end), leaves: L0.filter(l => l.empId === e.id), loans: LOANS.filter(l => l.empId === e.id), unpaidTypes, month, period: per, today: ui.today() }); o.net += c.net; o.cost += c.cost; return o; }, { net: 0, cost: 0 }); };
   const base = totals(cfg.rules, cfg.state);
   function whatIf() {
     const now = totals(W.rules, W.state), dn = Math.round(now.net - base.net), dc = Math.round(now.cost - base.cost);
@@ -25,7 +25,7 @@ HR.payrollRules = async function (root) {
   function pvHtml() {
     const e = emps.find(x => x.id === pv); if (!e) return '<div class="em">أضف موظفين لتجربة القواعد عليهم</div>';
     const per = P.period(month, W.rules);
-    const c = P.calc(e, { rules: W.rules, state: W.state, adj: ADJ.find(a => a.empId === e.id && a.month === month), att: A0.filter(a => a.empId === e.id && a.date >= per.start && a.date <= per.end), leaves: L0.filter(l => l.empId === e.id), loans: LOANS.filter(l => l.empId === e.id), month, period: per, today: ui.today() });
+    const c = P.calc(e, { rules: W.rules, state: W.state, adj: ADJ.find(a => a.empId === e.id && a.month === month), att: A0.filter(a => a.empId === e.id && a.date >= per.start && a.date <= per.end), leaves: L0.filter(l => l.empId === e.id), loans: LOANS.filter(l => l.empId === e.id), unpaidTypes, month, period: per, today: ui.today() });
     const ln = t => c.lines.filter(l => l.t === t).map(l => '<div class="ln"><span>' + esc(l.label) + (l.note ? '<small>' + esc(l.note) + '</small>' : '') + '</span><b>' + ui.money(l.amount) + '</b></div>').join('') || '<div class="em" style="padding:4px">لا يوجد</div>';
     return whatIf() + '<div class="bd" style="grid-template-columns:1fr"><div><h4>المستحقات</h4>' + ln('earn') + '</div><div><h4>الخصومات</h4>' + ln('ded') + '</div></div><div class="ln tot" style="display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:2px solid var(--ln);padding-top:8px;margin-top:8px"><span>الصافي</span><span class="net">' + ui.money(c.net) + '</span></div>' +
       '<div style="color:var(--mu);font-size:12px;margin-top:6px">قيمة اليوم ' + ui.money(c.meta.dayValue) + ' • الفترة ' + per.start + ' إلى ' + per.end + '</div>' + (c.flags.length ? '<div class="al wa" style="margin-top:8px">' + esc(c.flags.join('، ')) + '</div>' : '');
@@ -38,7 +38,7 @@ HR.payrollRules = async function (root) {
     root.innerHTML = ui.head('قواعد الرواتب', isAdmin ? 'كل بند هنا قابل للتعديل، والنتيجة بتظهر فورًا على اليمين' : 'عرض فقط: تعديل القواعد للمدير', '<button class="btn ghost" data-a="back">رجوع للرواتب</button>') +
       '<div class="rl"><div>' +
       '<div class="card rcard"><h3>الدورة والحساب</h3><div class="fg">' + txt('rules.company.name', 'اسم الشركة (يظهر في القسايم)') + num('rules.startDay', 'يوم بداية الشهر (1 = شهر كامل)') + sel('rules.daysBasis', 'أساس أيام الشهر', [['30', '30 يوم ثابتة'], ['actual', 'الأيام الفعلية']], { t: 'days' }) + num('rules.hoursPerDay', 'ساعات اليوم') + sel('rules.dayValueBase', 'قيمة اليوم من', [['basic+allow', 'الأساسي + البدلات'], ['basic', 'الأساسي فقط']]) + sel('rules.rounding', 'التقريب', [['two', 'قرشين'], ['integer', 'لأقرب جنيه'], ['none', 'من غير تقريب']]) + '</div>' +
-      '<p style="margin:14px 0 6px;color:var(--mu);font-size:13px">أيام الإجازة الأسبوعية</p><div class="fg">' + days.map((d, i) => '<label class="ck"><input type="checkbox" data-wk="' + i + '"' + (R.weekend.indexOf(i) > -1 ? ' checked' : '') + dis() + '>' + d + '</label>').join('') + '</div></div>' +
+      '<div class="fg" style="margin-top:14px">' + chk('rules.proration.enabled', 'راتب جزئي للموظف المعيّن أو المنتهية خدمته في نص الشهر') + chk('rules.proration.insurance', 'التأمينات كمان بالتناسب (غير مفعّل = على الأجر كامل)') + '</div><p style="margin:14px 0 6px;color:var(--mu);font-size:13px">أيام الإجازة الأسبوعية</p><div class="fg">' + days.map((d, i) => '<label class="ck"><input type="checkbox" data-wk="' + i + '"' + (R.weekend.indexOf(i) > -1 ? ' checked' : '') + dis() + '>' + d + '</label>').join('') + '</div></div>' +
       '<div class="card rcard"><h3>بنود الراتب الإضافية <span>' + add('rules.items', '+ بند') + '</span></h3><p style="color:var(--mu);font-size:13px;margin-top:-6px">أي بدل أو عمولة أو خصم يتطبق على كل الموظفين (أو قسم معين).</p>' +
       (items.length ? items.map((it, i) => { const q = 'rules.items.' + i; return '<div class="rrow">' + txt(q + '.name', 'اسم البند') + sel(q + '.kind', 'النوع', [['earn', 'مستحق'], ['ded', 'خصم']]) + sel(q + '.calc', 'طريقة الحساب', [['fixed', 'مبلغ ثابت'], ['pctBasic', '% من الأساسي'], ['pctGross', '% من الإجمالي']]) + num(q + '.value', 'القيمة') + txt(q + '.dept', 'القسم (اختياري)') + chk(q + '.insurable', 'داخل في الأجر التأميني') + chk(q + '.active', 'مفعّل') + del('rules.items', i) + '</div>'; }).join('') : '<div class="em">لا توجد بنود إضافية</div>') + '</div>' +
       '<div class="card rcard"><h3>الأوفر تايم</h3><div class="fg">' + chk('rules.overtime.enabled', 'احتساب الأوفر تايم') + sel('rules.overtime.base', 'قيمة الساعة من', [['basic', 'الأساسي'], ['basic+allow', 'الأساسي + البدلات']]) + num('rules.overtime.rates.normal', 'معامل النهاري') + num('rules.overtime.rates.night', 'معامل الليلي') + num('rules.overtime.rates.rest', 'معامل الراحة الأسبوعية') + num('rules.overtime.rates.holiday', 'معامل العطلة الرسمية') + '</div><p style="color:var(--mu);font-size:12px">قيمة الساعة = الراتب ÷ أيام الشهر ÷ ساعات اليوم، ثم × المعامل. المعاملات الافتراضية للتجربة، اضبطها حسب سياسة شركتك.</p></div>' +

@@ -10,6 +10,7 @@
     dayValueBase: 'basic+allow',       // basic | basic+allow
     rounding: 'two',                   // none | two | integer
     company: { name: '' },
+    proration: { enabled: true, insurance: false },   // راتب جزئي للتعيين/إنهاء الخدمة في نص الشهر
     weekend: [5, 6],                   // 0 أحد ... 5 جمعة 6 سبت
     holidays: [],                      // [{date:'2026-10-06', name:'...'}]
     items: [],                         // بنود إضافية على كل الموظفين
@@ -55,20 +56,26 @@
   P.calc = function (emp, ctx) {
     const R = ctx.rules, ST = ctx.state, adj = Object.assign({}, ZERO, ctx.adj || {}), rm = R.rounding;
     const num = v => Number(v) || 0;
-    const basic = num(emp.salary), allow = num(emp.allow);
+    const basicFull = num(emp.salary), allowFull = num(emp.allow);
     const per = ctx.period, plen = P.dates(per.start, per.end).length;
+    /* راتب جزئي: أيام التعيين/إنهاء الخدمة داخل الفترة */
+    const pStart = emp.hire && emp.hire > per.start ? emp.hire : per.start, pEnd = emp.endDate && emp.endDate < per.end ? emp.endDate : per.end;
+    let factor = 1, payDays = plen;
+    if ((R.proration || {}).enabled !== false && (pStart > per.start || pEnd < per.end)) { payDays = pStart > pEnd ? 0 : P.dates(pStart, pEnd).length; factor = payDays / plen; }
+    const basic = basicFull * factor, allow = allowFull * factor;
     const dBasis = R.daysBasis === 'actual' ? plen : (num(R.daysBasis) || 30);
-    const dayBase = R.dayValueBase === 'basic' ? basic : basic + allow;
+    const dayBase = R.dayValueBase === 'basic' ? basicFull : basicFull + allowFull;
     const dayValue = dayBase / dBasis;
     const lines = [], add = (t, label, amount, note) => { if (amount) lines.push({ t, label, amount: rnd(amount, rm), note: note || '' }); };
 
     /* المستحقات */
-    add('earn', 'الراتب الأساسي', basic);
-    add('earn', 'البدلات', allow);
+    const pnote = factor < 1 ? payDays + ' يوم من ' + plen : '';
+    add('earn', 'الراتب الأساسي', basic, pnote);
+    add('earn', 'البدلات', allow, pnote);
     let insurableExtra = 0, itemsGross = 0, taxableExtra = 0;
     (R.items || []).filter(i => i.active !== false && (!i.dept || i.dept === emp.dept)).forEach(i => {
       const v = num(i.value);
-      const amt = i.calc === 'pctBasic' ? basic * v / 100 : i.calc === 'pctGross' ? (basic + allow + itemsGross) * v / 100 : v;
+      const amt = i.calc === 'pctBasic' ? basic * v / 100 : i.calc === 'pctGross' ? (basic + allow + itemsGross) * v / 100 : (i.kind === 'ded' ? v : v * factor);
       if (i.kind === 'ded') { add('ded', i.name || 'خصم', amt, i.calc === 'fixed' ? '' : v + '%'); return; }
       add('earn', i.name || 'بند', amt, i.calc === 'fixed' ? '' : v + '%'); itemsGross += amt;
       if (i.insurable) insurableExtra += amt;
@@ -78,7 +85,7 @@
     /* الأوفر تايم */
     const ot = R.overtime || {}; let otTotal = 0; const otH = { normal: num(adj.otNormal), night: num(adj.otNight), rest: num(adj.otRest), holiday: num(adj.otHoliday) };
     if (ot.enabled) {
-      const base = ot.base === 'basic+allow' ? basic + allow : basic, hourly = base / dBasis / (num(R.hoursPerDay) || 8);
+      const base = ot.base === 'basic+allow' ? basicFull + allowFull : basicFull, hourly = base / dBasis / (num(R.hoursPerDay) || 8);
       [['normal', 'نهاري'], ['night', 'ليلي'], ['rest', 'راحة أسبوعية'], ['holiday', 'عطلة رسمية']].forEach(([k, l]) => {
         if (otH[k] > 0) { const a = otH[k] * hourly * num(ot.rates[k]); otTotal += a; add('earn', 'أوفر تايم ' + l, a, otH[k] + ' ساعة × ' + num(ot.rates[k])); }
       });
@@ -95,6 +102,7 @@
         const wd = new Date(U(d)).getUTCDay();
         if ((R.weekend || []).indexOf(wd) > -1 || hol[d]) return;
         if (emp.hire && d < emp.hire) return;
+        if (emp.endDate && d > emp.endDate) return;
         const rec = attBy[d];
         if (rec) {
           const late = shift == null || mins(rec.in) == null ? 0 : mins(rec.in) - shift;
@@ -102,7 +110,7 @@
             lateDays++; lateMinutesTotal += late;
             if (A.lateMode === 'tiers') { const t = (A.tiers || []).find(x => late >= num(x.from) && late <= num(x.to)); if (t) lateDeductDays += num(t.days); }
           }
-        } else if (leaveBy[d]) { if (leaveBy[d].type === 'بدون مرتب' && A.unpaidLeaveDeduct) unpaid++; }
+        } else if (leaveBy[d]) { if ((ctx.unpaidTypes || ['بدون مرتب']).indexOf(leaveBy[d].type) > -1 && A.unpaidLeaveDeduct) unpaid++; }
         else absentAuto++;
       });
     }
@@ -111,8 +119,9 @@
     /* الأجر التأميني */
     const I = ST.insurance || {}; let insurance = 0, employerIns = 0, insWage = 0;
     if (I.enabled && emp.insured !== false) {
-      insWage = basic + insurableExtra + (I.includeAllowances ? allow : 0);
+      insWage = basicFull + insurableExtra + (I.includeAllowances ? allowFull : 0);
       insWage = Math.min(Math.max(insWage, num(I.minWage)), num(I.maxWage) || Infinity);
+      if ((R.proration || {}).insurance) insWage *= factor;
       insurance = insWage * num(I.employeeRate) / 100; employerIns = insWage * num(I.employerRate) / 100;
     }
 
@@ -140,10 +149,10 @@
     const ded = lines.filter(l => l.t === 'ded').reduce((s, l) => s + l.amount, 0);
     const net = rnd(gross - ded, rm), flags = [];
     if (net < 0) flags.push('الصافي بالسالب');
-    if (I.enabled && emp.insured !== false && basic + insurableExtra + (I.includeAllowances ? allow : 0) < num(I.minWage)) flags.push('الأجر أقل من الحد الأدنى للتأمينات');
-    if (!basic) flags.push('لا يوجد راتب أساسي');
+    if (I.enabled && emp.insured !== false && basicFull + insurableExtra + (I.includeAllowances ? allowFull : 0) < num(I.minWage)) flags.push('الأجر أقل من الحد الأدنى للتأمينات');
+    if (!basicFull) flags.push('لا يوجد راتب أساسي');
     return { lines, gross: rnd(gross, rm), deductions: rnd(ded, rm), insurance: rnd(insurance, rm), tax: rnd(tax, rm), net, employerIns: rnd(employerIns, rm), cost: rnd(gross + employerIns, rm), insWage: rnd(insWage, rm), ot: rnd(otTotal, rm), loan: rnd(loanTotal, rm), flags,
-      meta: { absentDays, absentAuto, lateDays, lateMin: lateMinutesTotal, unpaid, otHours: otH.normal + otH.night + otH.rest + otH.holiday, dayValue: rnd(dayValue, 'two') } };
+      meta: { prorated: factor < 1 ? { days: payDays, of: plen } : null, absentDays, absentAuto, lateDays, lateMin: lateMinutesTotal, unpaid, otHours: otH.normal + otH.night + otH.rest + otH.holiday, dayValue: rnd(dayValue, 'two') } };
   };
 
   /* تحميل وحفظ الإعدادات */
