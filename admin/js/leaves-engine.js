@@ -4,6 +4,7 @@
   L.DEFAULT = {
     yearStartMonth: 1,                 // 1 = سنة ميلادية
     countMode: 'calendar',             // calendar | workdays (يستثني الإجازة الأسبوعية والعطلات)
+    requireManager: false,             // لازم موافقة المدير المباشر قبل الموارد البشرية
     maxDeptOffPct: 0,                  // أقصى % من القسم في إجازة في نفس اليوم (0 = بدون حد)
     annualTenure: [{ years: 10, days: 30 }],
     types: [

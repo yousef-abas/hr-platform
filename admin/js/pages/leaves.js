@@ -16,7 +16,7 @@ HR.pages.leaves = {
       const fs = st.lfs || '', ft = st.lft || '', fq = st.lfq || '';
       const rows = LV.slice().reverse().filter(l => (!fs || l.status === fs) && (!ft || l.type === ft) && (!fq || emp(l.empId).name.includes(fq)));
       body = '<div class="card"><div class="tools" style="margin-bottom:12px"><input id="fq" placeholder="بحث باسم موظف" value="' + esc(fq) + '"><select id="fs"><option value="">كل الحالات</option>' + ['معلقة', 'معتمدة', 'مرفوضة'].map(x => '<option' + (x === fs ? ' selected' : '') + '>' + x + '</option>').join('') + '</select><select id="ft"><option value="">كل الأنواع</option>' + rules.types.map(t => '<option' + (t.name === ft ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('') + '</select></div><div class="tw"><table><tr><th>الموظف</th><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th><th>القرار</th><th></th></tr>' +
-        rows.map(l => '<tr data-id="' + l.id + '"><td>' + ui.who(emp(l.empId)) + '</td><td>' + tchip(l.type) + '</td><td>' + l.from + '</td><td>' + l.to + '</td><td>' + l.days + '</td><td>' + ui.tag(l.status, { 'معتمدة': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa' }[l.status]) + '</td><td style="white-space:normal;min-width:140px;font-size:13px;color:var(--mu)">' + esc(l.status === 'مرفوضة' && l.rejectReason ? 'سبب الرفض: ' + l.rejectReason : (l.decidedBy ? l.decidedBy : '')) + '</td><td>' +
+        rows.map(l => '<tr data-id="' + l.id + '"><td>' + ui.who(emp(l.empId)) + '</td><td>' + tchip(l.type) + '</td><td>' + l.from + '</td><td>' + l.to + '</td><td>' + l.days + '</td><td>' + ui.tag(l.status, { 'معتمدة': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa' }[l.status]) + '</td><td style="white-space:normal;min-width:140px;font-size:13px;color:var(--mu)">' + esc((l.mgrStatus ? 'المدير: ' + l.mgrStatus + (l.mgrBy ? ' (' + l.mgrBy + ')' : '') + ' ' : '') + (l.status === 'مرفوضة' && l.rejectReason ? 'سبب الرفض: ' + l.rejectReason : (l.decidedBy ? '• ' + l.decidedBy : ''))) + '</td><td>' +
           (l.status === 'معلقة' ? '<button class="btn sm" data-a="ok">اعتماد</button> <button class="btn danger sm" data-a="no">رفض</button>' : '') + '</td></tr>').join('') + '</table>' + (rows.length ? '' : '<div class="em">لا توجد طلبات مطابقة</div>') + '</div></div>';
     }
     if (st.lview === 'bal') {
@@ -79,6 +79,7 @@ HR.pages.leaves = {
       if (a === 'add') return requestModal();
       const l = LV.find(x => x.id === id), by = HR.user.email || HR.user.name;
       if (a === 'ok') {
+        if (rules.requireManager && emp(l.empId).managerId && l.mgrStatus !== 'موافق') { if (!isAdmin) return ui.toast('لازم موافقة المدير المباشر الأول'); if (!confirm('المدير المباشر لسه ما وافقش. تعتمد كمدير نظام؟')) return; }
         const v = L.validate(l, { emp: emp(l.empId), rules, pay, leaves: LV.filter(x => x.id !== id), emps, today: l.from });
         const issues = v.errors.concat(v.warnings);
         if (issues.length && !confirm('ملاحظات على الطلب:\n- ' + issues.join('\n- ') + '\n\nتعتمد برضه؟')) return;

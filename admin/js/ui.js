@@ -18,6 +18,8 @@
     menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
     shield: '<path d="M12 3l8 3v6c0 4.500-3.400 8-8 9-4.600-1-8-4.500-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
     list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+    home: '<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.6-4 3.8-6 8-6s7.400 2 8 6"/>',
     upload: '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.500 4.500"/>'
   };

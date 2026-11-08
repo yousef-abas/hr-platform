@@ -7,6 +7,7 @@ HR.empFields = [
 ];
 HR.fixEmp = o => {
   o.salary = +o.salary; o.allow = +o.allow || 0;
+  if (o.remoteOk !== undefined) o.remoteOk = o.remoteOk === true || o.remoteOk === 'true';
   if (o.insured !== undefined) o.insured = !(o.insured === false || o.insured === 'false');
   const r = o.nid && HR.ui.nid(o.nid); if (r) Object.assign(o, r);
   return o;
