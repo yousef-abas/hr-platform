@@ -74,7 +74,8 @@ HR.pages.payroll = {
         '<input type="month" id="mo" value="' + month + '">' +
         '<button class="btn ghost" data-a="rules">⚙️ قواعد الرواتب</button>' +
         '<button class="btn ghost" data-a="loans">💳 السلف</button>' +
-        '<button class="btn ghost" data-a="exp">📤 تصدير وطباعة</button>' +
+        '<button class="btn ghost" data-a="exp">📊 تصدير Excel</button>' +
+        '<button class="btn ghost" data-a="pdf-all">🖨️ PDF كشف شامل</button>' +
         acts
       ) +
 
@@ -270,7 +271,14 @@ HR.pages.payroll = {
 
       if (a === 'slip') {
         const r = rows.find(x => x.id === id);
-        HR.printSlip(r, per, rules);
+        const E0full = await store.list('employees');
+        const emp = E0full.find(e => e.id === r.id) || r;
+        HR.pdf.slip(emp, r.calc, month, rules);
+      }
+
+      if (a === 'pdf-all') {
+        HR.pdf.payrollSummary(rows, month);
+        return;
       }
 
       /* Row expand */
