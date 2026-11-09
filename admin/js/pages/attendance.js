@@ -8,7 +8,8 @@ HR.pages.attendance = {
 
     let A;
     if (store.query) {
-      A = await store.query('attendance', q => q.gte('date', month + '-01').lte('date', month + '-31'));
+      const lastDay = new Date(+month.slice(0,4), +month.slice(5,7), 0).getDate();
+      A = await store.query('attendance', q => q.gte('date', month + '-01').lte('date', month + '-' + String(lastDay).padStart(2,'0')));
     } else {
       A = (await store.list('attendance')).filter(a => a.date.startsWith(month));
     }
