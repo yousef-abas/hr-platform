@@ -134,7 +134,10 @@
     return { birth, gender: genderDigit % 2 !== 0 ? 'ذكر' : 'أنثى' };
   }
 
+  /* ui.color(e) — لون avatar بناءً على الاسم */
+  const color = e => COL[(e && e.name ? e.name : '').length % COL.length];
+
   /* تأكد إن H.ui موجود قبل الـ assign — لو مش موجود نعمله */
   if (!H.ui) H.ui = {};
-  Object.assign(H.ui, { esc, money, today, days, tag, icon, stars, who, head, toast, modal, form, drawer, csv, nid, debounce, prompt });
+  Object.assign(H.ui, { esc, money, iso, today, days, tag, icon, stars, who, head, toast, modal, form, drawer, csv, nid, debounce, prompt, color });
 })();
