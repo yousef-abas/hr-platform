@@ -61,6 +61,22 @@
       }
       return out.map(r => fromDb(t, r));
     },
+
+    // [تحسين #5-6] دالة query للفلترة من قاعدة البيانات مباشرة بدل تحميل كل السجلات
+    // مثال: store.query('attendance', q => q.eq('date', '2026-11-09'))
+    // مثال: store.query('attendance', q => q.gte('date', from).lte('date', to))
+    async query(t, buildQuery) {
+      let out = [], from = 0;
+      for (;;) {
+        let q = sb.from(TABLE[t]).select('*').order('created_at').range(from, from + 999);
+        if (buildQuery) q = buildQuery(q);
+        const { data, error } = await q;
+        fail(error); out = out.concat(data);
+        if (data.length < 1000) break; from += 1000;
+      }
+      return out.map(r => fromDb(t, r));
+    },
+
     async create(t, row) { const { data, error } = await sb.from(TABLE[t]).insert(toDb(t, row)).select().single(); fail(error); return fromDb(t, data); },
     async update(t, id, patch) { const p = toDb(t, patch); delete p.id; const { data, error } = await sb.from(TABLE[t]).update(p).eq('id', id).select().single(); fail(error); return fromDb(t, data); },
     async createMany(t, rows) {
@@ -85,7 +101,23 @@
       const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type || undefined });
       fail(error); return path;
     },
-    async url(ref) { const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(ref, 300); fail(error); return data.signedUrl; }
+    async url(ref) { const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(ref, 300); fail(error); return data.signedUrl; },
+
+    // [تحسين #1] رفع صورة الموظف على storage بدل تخزينها كـ base64 في DB
+    // العمود photo في جدول employees يخزن المسار فقط (string قصير)
+    // base64 القديم (data:image/...) مدعوم للقراءة للتوافق مع السجلات الموجودة
+    async uploadPhoto(empId, blob) {
+      const path = empId + '/photo-' + Date.now() + '.jpg';
+      const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+      fail(error);
+      return path;
+    },
+    async photoUrl(ref) {
+      if (ref && ref.startsWith('data:')) return ref;  // base64 قديم: ارجعه مباشرة
+      if (!ref) return null;
+      const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(ref, 3600);
+      fail(error); return data.signedUrl;
+    }
   };
 
   H.auth = {

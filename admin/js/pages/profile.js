@@ -6,21 +6,51 @@ HR.pages.profile = {
   title: 'ملف الموظف', icon: 'users',
   async render(root, id) {
     const { store, ui, state: st } = HR, esc = ui.esc;
-    const [E, A0, L0, R0, P0, D0, T0, RUNS, LINES, LRU, PCF] = await Promise.all(['employees', 'attendance', 'leaves', 'reviews', 'payroll', 'documents', 'timeline', 'runs', 'lines'].map(t => store.list(t)).concat([HR.leaves.load(), HR.payroll.load()]));
+    const tab = st.ptab || 'ov';
+
+    // [تحسين #2] Lazy loading: بيانات ثابتة دايماً + بيانات التبويب فقط
+    // البيانات المشتركة (بتتحمل دايماً)
+    const [E, D0, T0, LRU, PCF] = await Promise.all([
+      store.list('employees'),
+      store.list('documents'),
+      store.list('timeline'),
+      HR.leaves.load(),
+      HR.payroll.load()
+    ]);
     const e = E.find(x => x.id === id);
     if (!e) { root.innerHTML = '<div class="card em">الموظف غير موجود. <a href="#employees" style="color:var(--ac)">رجوع للقائمة</a></div>'; return; }
-    const mine = a => a.filter(x => x.empId === id);
-    const A = mine(A0), L = mine(L0), R = mine(R0), P = mine(P0), D = mine(D0), T = mine(T0);
-    const td = ui.today(), dl = d => Math.round((new Date(d) - new Date(td)) / 864e5);
-    const mgr = E.find(x => x.id === e.managerId), mo = td.slice(0, 7);
+
+    const D = D0.filter(x => x.empId === id);
+    const T = T0.filter(x => x.empId === id);
+    const td = ui.today(), mgr = E.find(x => x.id === e.managerId);
+
+    // [تحسين #2] تحميل بيانات التبويب فقط
+    let A = [], L = [], R = [], P = [], RUNS = [], LINES = [];
+    if (tab === 'at' || tab === 'ov') {
+      A = (await store.list('attendance')).filter(x => x.empId === id);
+    }
+    if (tab === 'lv' || tab === 'ov') {
+      L = (await store.list('leaves')).filter(x => x.empId === id);
+    }
+    if (tab === 'pf') {
+      R = (await store.list('reviews')).filter(x => x.empId === id);
+    }
+    if (tab === 'py') {
+      RUNS = await store.list('runs');
+      LINES = (await store.list('lines')).filter(x => x.empId === id);
+    }
+    // نظرة عامة: نحتاج كل الإجازات للرصيد
+    let L0_all = tab === 'ov' ? await store.list('leaves') : [];
+
+    const dl = d => Math.round((new Date(d) - new Date(td)) / 864e5);
+    const mo = td.slice(0, 7);
     let wd = 0; for (let i = 1; i <= +td.slice(8); i++) { const g = new Date(mo + '-' + String(i).padStart(2, '0')).getUTCDay(); if (g !== 5 && g !== 6) wd++; }
     const pr = A.filter(a => a.date.startsWith(mo) && a.in), late = pr.filter(a => a.in > '09:30').length;
     const apct = wd ? Math.min(100, Math.round(pr.length / wd * 100)) : null;
-    const used = L.filter(l => l.type === 'سنوية' && l.status === 'معتمدة').reduce((s, l) => s + l.days, 0);
     const avg = R.length ? R.reduce((s, r) => s + r.avg, 0) / R.length : 0;
     const upTo = e.endDate && e.endDate < td ? e.endDate : td;
     const mainT = LRU.types.find(t => t.name === 'سنوية') || LRU.types.find(t => t.paid && t.quota > 0);
-    const mb = mainT ? HR.leaves.balance(e, mainT.name, td, L0, LRU, PCF.rules) : null;
+    const mb = mainT ? HR.leaves.balance(e, mainT.name, td, tab === 'ov' ? L0_all : L, LRU, PCF.rules) : null;
     const m = Math.max(0, Math.floor((new Date(upTo) - new Date(e.hire)) / 2629800000));
     const pl = (n, a, b, c, d) => n === 1 ? a : n === 2 ? b : n <= 10 ? n + ' ' + c : n + ' ' + d;
     const yy = Math.floor(m / 12), mm = m % 12;
@@ -36,7 +66,6 @@ HR.pages.profile = {
     const pf = ['photo', 'nid', 'phone', 'email', 'address', 'marital', 'military', 'emergName', 'emergPhone', 'contractType', 'insuranceNo', 'iban'];
     const comp = Math.round((pf.filter(k => e[k]).length + ds.filter(x => x.s[1] !== 'da').length) / (pf.length + ds.length) * 100);
     const S = { active: ['نشط', 'ok'], leave: ['في إجازة', 'wa'], terminated: ['منتهي الخدمة', 'mu'] }[e.status] || ['نشط', 'ok'];
-    const tab = st.ptab || 'ov';
     const kv = a => '<div class="kv2">' + a.map(r => '<div><span>' + r[0] + '</span><b>' + (r[1] ? esc(r[1]) : '—') + '</b></div>').join('') + '</div>';
 
     const al = [];
@@ -56,13 +85,18 @@ HR.pages.profile = {
       dc: () => '<div class="card tw"><h3>المستندات المطلوبة (' + ds.filter(x => x.s[1] !== 'da').length + ' من ' + ds.length + ')</h3><table><tr><th>المستند</th><th>الحالة</th><th>تاريخ الاستلام</th><th>تاريخ الانتهاء</th><th>الملف</th><th></th></tr>' +
         ds.map(({ t, s }) => { const d = s[2]; return '<tr data-k="' + t.k + '"><td><b>' + t.l + '</b></td><td>' + ui.tag(s[0], s[1]) + '</td><td>' + (d && d.received || '—') + '</td><td>' + (d && d.expiry || (t.x ? '—' : 'لا ينطبق')) + '</td><td>' + (d && d.file ? '<button class="btn ghost sm" data-a="dview">عرض</button>' : '—') + '</td><td><button class="btn sm" data-a="dedit">' + (d && d.received ? 'تعديل' : 'تسجيل استلام') + '</button> <button class="btn ghost sm" data-a="dup">رفع ملف</button>' + (d ? ' <button class="btn danger sm" data-a="ddel">حذف</button>' : '') + '</td></tr>'; }).join('') + '</table><p style="color:var(--mu);font-size:13px">' + HR.files.note + '</p></div>',
       at: () => '<div class="card tw"><h3>آخر سجلات الحضور</h3><table><tr><th>التاريخ</th><th>الحضور</th><th>الانصراف</th><th>الحالة</th></tr>' + A.slice().sort((a, b) => b.date < a.date ? -1 : 1).slice(0, 30).map(a => '<tr><td>' + a.date + '</td><td>' + (a.in || '—') + '</td><td>' + (a.out || '—') + '</td><td>' + (!a.in ? ui.tag('غائب', 'da') : a.in > '09:30' ? ui.tag('متأخر', 'wa') : ui.tag('في الموعد', 'ok')) + '</td></tr>').join('') + '</table>' + (A.length ? '' : '<div class="em">لا توجد سجلات</div>') + '</div>',
-      lv: () => '<div class="card"><h3>أرصدة السنة الحالية</h3>' + LRU.types.map(t => { const b = HR.leaves.balance(e, t.name, td, L0, LRU, PCF.rules); return b.unlimited ? '<div class="bal"><span>' + esc(t.name) + '</span><span>استخدم ' + b.used + ' يوم (بدون حد)</span></div>' : '<div class="bal"><span>' + esc(t.name) + '</span><div class="pb"><i style="width:' + Math.min(100, b.used / b.total * 100) + '%;background:' + t.color + '"></i></div><span>' + b.remaining + ' متبقي من ' + b.total + (b.carry ? ' (فيها ' + b.carry + ' مرحّلة)' : '') + '</span></div>'; }).join('') + '</div><div class="card tw"><h3>الطلبات</h3><table><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th><th>القرار</th></tr>' + L.slice().reverse().map(l => '<tr><td>' + esc(l.type) + '</td><td>' + l.from + '</td><td>' + l.to + '</td><td>' + l.days + '</td><td>' + ui.tag(l.status, { 'معتمدة': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa' }[l.status]) + '</td><td style="white-space:normal;color:var(--mu);font-size:13px">' + esc(l.status === 'مرفوضة' && l.rejectReason ? 'سبب الرفض: ' + l.rejectReason : (l.decidedBy || '')) + '</td></tr>').join('') + '</table>' + (L.length ? '' : '<div class="em">لا توجد طلبات</div>') + '</div>',
-      py: () => { const my = LINES.filter(l => l.empId === id).map(l => ({ run: RUNS.find(r => r.id === l.runId), c: (l.data || {}).calc })).filter(x => x.run && x.c).sort((x, y) => y.run.month < x.run.month ? -1 : 1); return '<div class="card"><h3>الراتب الحالي</h3>' + kv([['الأساسي', ui.money(e.salary)], ['البدلات', ui.money(e.allow)], ['مشمول بالتأمينات', e.insured === false ? 'لا' : 'نعم']]) + '<p style="color:var(--mu);font-size:13px">الحساب التفصيلي وقواعده في صفحة <a href="#payroll" style="color:var(--ac)">الرواتب</a>.</p></div><div class="card tw"><h3>الأشهر المعتمدة</h3><table><tr><th>الشهر</th><th>الإجمالي</th><th>الخصومات</th><th>الصافي</th><th>الحالة</th></tr>' + my.map(x => '<tr><td>' + x.run.month + '</td><td>' + ui.money(x.c.gross) + '</td><td>' + ui.money(x.c.deductions) + '</td><td class="net">' + ui.money(x.c.net) + '</td><td>' + ui.tag(x.run.status === 'paid' ? 'مصروف' : 'معتمد', 'ok') + '</td></tr>').join('') + '</table>' + (my.length ? '' : '<div class="em">لا توجد أشهر معتمدة بعد</div>') + '</div>'; },
+      lv: () => '<div class="card"><h3>أرصدة السنة الحالية</h3>' + LRU.types.map(t => { const b = HR.leaves.balance(e, t.name, td, L, LRU, PCF.rules); return b.unlimited ? '<div class="bal"><span>' + esc(t.name) + '</span><span>استخدم ' + b.used + ' يوم (بدون حد)</span></div>' : '<div class="bal"><span>' + esc(t.name) + '</span><div class="pb"><i style="width:' + Math.min(100, b.used / b.total * 100) + '%;background:' + t.color + '"></i></div><span>' + b.remaining + ' متبقي من ' + b.total + (b.carry ? ' (فيها ' + b.carry + ' مرحّلة)' : '') + '</span></div>'; }).join('') + '</div><div class="card tw"><h3>الطلبات</h3><table><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th><th>القرار</th></tr>' + L.slice().reverse().map(l => '<tr><td>' + esc(l.type) + '</td><td>' + l.from + '</td><td>' + l.to + '</td><td>' + l.days + '</td><td>' + ui.tag(l.status, { 'معتمدة': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa' }[l.status]) + '</td><td style="white-space:normal;color:var(--mu);font-size:13px">' + esc(l.status === 'مرفوضة' && l.rejectReason ? 'سبب الرفض: ' + l.rejectReason : (l.decidedBy || '')) + '</td></tr>').join('') + '</table>' + (L.length ? '' : '<div class="em">لا توجد طلبات</div>') + '</div>',
+      py: () => { const my = LINES.map(l => ({ run: RUNS.find(r => r.id === l.runId), c: (l.data || {}).calc })).filter(x => x.run && x.c).sort((x, y) => y.run.month < x.run.month ? -1 : 1); return '<div class="card"><h3>الراتب الحالي</h3>' + kv([['الأساسي', ui.money(e.salary)], ['البدلات', ui.money(e.allow)], ['مشمول بالتأمينات', e.insured === false ? 'لا' : 'نعم']]) + '<p style="color:var(--mu);font-size:13px">الحساب التفصيلي وقواعده في صفحة <a href="#payroll" style="color:var(--ac)">الرواتب</a>.</p></div><div class="card tw"><h3>الأشهر المعتمدة</h3><table><tr><th>الشهر</th><th>الإجمالي</th><th>الخصومات</th><th>الصافي</th><th>الحالة</th></tr>' + my.map(x => '<tr><td>' + x.run.month + '</td><td>' + ui.money(x.c.gross) + '</td><td>' + ui.money(x.c.deductions) + '</td><td class="net">' + ui.money(x.c.net) + '</td><td>' + ui.tag(x.run.status === 'paid' ? 'مصروف' : 'معتمد', 'ok') + '</td></tr>').join('') + '</table>' + (my.length ? '' : '<div class="em">لا توجد أشهر معتمدة بعد</div>') + '</div>'; },
       pf: () => '<div class="card"><h3>متوسط التقييم</h3>' + (R.length ? '<b style="font-size:28px">' + avg.toFixed(1) + '</b> ' + ui.stars(avg) + ' <span style="color:var(--mu)">(' + R.length + ' تقييم)</span>' : '<div class="em">لا توجد تقييمات. أضف من صفحة <a href="#performance" style="color:var(--ac)">تقييم الأداء</a>.</div>') + '</div>' + (R.length ? '<div class="card tw"><table><tr><th>الفترة</th><th>الجودة</th><th>التعاون</th><th>الالتزام</th><th>المبادرة</th><th>المتوسط</th><th>ملاحظات</th></tr>' + R.map(r => '<tr><td>' + r.period + '</td><td>' + r.q + '</td><td>' + r.t + '</td><td>' + r.p + '</td><td>' + r.i + '</td><td><b>' + r.avg.toFixed(1) + '</b></td><td>' + esc(r.note || '') + '</td></tr>').join('') + '</table></div>' : ''),
       tl: () => { const it = T.concat([{ id: '', date: e.hire, type: 'تعيين', text: 'الانضمام للشركة بوظيفة ' + e.title }]).sort((a, b) => b.date < a.date ? -1 : 1); return '<div class="card"><div class="ph" style="margin-bottom:12px"><h3 style="margin:0">السجل الوظيفي</h3><button class="btn sm" data-a="tadd">+ إضافة حدث</button></div><div class="tl">' + it.map(x => '<div data-id="' + x.id + '"><b>' + esc(x.type) + '</b> <small>' + x.date + '</small>' + (x.id ? ' <button class="btn danger sm" data-a="tdel">حذف</button>' : '') + '<div>' + esc(x.text) + '</div></div>').join('') + '</div></div>'; }
     };
 
-    const av = e.photo ? '<img class="av" alt="" src="' + e.photo + '">' : '<span class="av" style="background:' + ui.color(e) + '">' + esc(e.name.trim()[0]) + '</span>';
+    // [تحسين #1] الصورة: لو storage path استخدم photoUrl، لو base64 قديم استخدمه مباشرة
+    let photoSrc = null;
+    if (e.photo) {
+      photoSrc = HR.files.photoUrl ? await HR.files.photoUrl(e.photo).catch(() => e.photo) : e.photo;
+    }
+    const av = photoSrc ? '<img class="av" alt="" src="' + photoSrc + '">' : '<span class="av" style="background:' + ui.color(e) + '">' + esc(e.name.trim()[0]) + '</span>';
     const kp = (l, v, s, c) => '<div class="card kpi"><span>' + l + '</span><b class="' + (c || '') + '" style="font-size:26px">' + v + '</b><small style="margin:0">' + s + '</small></div>';
     root.innerHTML =
       '<div class="bc" style="margin-bottom:10px"><a href="#dashboard">الرئيسية</a> › <a href="#employees">الموظفون</a> › ' + esc(e.name) + '</div>' +
@@ -77,8 +111,11 @@ HR.pages.profile = {
       const lab = [], val = [];
       for (let i = 5; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); const k = ui.iso(d).slice(0, 7); lab.push(k); val.push(A.filter(a => a.date.startsWith(k) && a.in).length); }
       new Chart(root.querySelector('#c1'), { type: 'bar', data: { labels: lab, datasets: [{ data: val, backgroundColor: '#0070f2', borderRadius: 8, maxBarThickness: 36 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } } } });
-      const per = [...new Set(R.map(r => r.period))].sort(), ids = E.filter(x => x.dept === e.dept).map(x => x.id), all = R0.filter(r => ids.indexOf(r.empId) > -1);
-      new Chart(root.querySelector('#c2'), { type: 'line', data: { labels: per, datasets: [{ label: e.name, data: per.map(p => (R.find(r => r.period === p) || {}).avg), borderColor: '#0070f2', tension: .3 }, { label: 'متوسط القسم', data: per.map(p => { const x = all.filter(r => r.period === p); return x.length ? x.reduce((s, r) => s + r.avg, 0) / x.length : null; }), borderColor: '#9aa8b8', borderDash: [5, 4], tension: .3 }] }, options: { maintainAspectRatio: false, scales: { y: { min: 0, max: 5 } } } });
+      // للأداء: نجيب بيانات القسم فقط اللي نحتاجها
+      const R0_dept = (await store.list('reviews')).filter(r => (E.find(x => x.id === r.empId) || {}).dept === e.dept);
+      const myR = R0_dept.filter(r => r.empId === id);
+      const per = [...new Set(R0_dept.map(r => r.period))].sort();
+      new Chart(root.querySelector('#c2'), { type: 'line', data: { labels: per, datasets: [{ label: e.name, data: per.map(p => (myR.find(r => r.period === p) || {}).avg), borderColor: '#0070f2', tension: .3 }, { label: 'متوسط القسم', data: per.map(p => { const x = R0_dept.filter(r => r.period === p); return x.length ? x.reduce((s, r) => s + r.avg, 0) / x.length : null; }), borderColor: '#9aa8b8', borderDash: [5, 4], tension: .3 }] }, options: { maintainAspectRatio: false, scales: { y: { min: 0, max: 5 } } } });
       const lt = {}; L.filter(l => l.status === 'معتمدة').forEach(l => lt[l.type] = (lt[l.type] || 0) + l.days);
       new Chart(root.querySelector('#c3'), { type: 'bar', data: { labels: Object.keys(lt), datasets: [{ data: Object.values(lt), backgroundColor: '#0e9f9a', borderRadius: 8, maxBarThickness: 40 }] }, options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } } });
     }
@@ -100,7 +137,28 @@ HR.pages.profile = {
       if (b.dataset.t) { st.ptab = b.dataset.t; HR.refresh(); return; }
       const a = b.dataset.a, tr = b.closest('tr') || b.closest('[data-id]'), k = tr && tr.dataset.k, dt = HR.docTypes.find(x => x.k === k);
       if (a === 'print') window.print();
-      else if (a === 'photo') pick('image/*', async f => { const img = new Image(); img.onload = async () => { const s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 240; c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 240, 240); await store.update('employees', id, { photo: c.toDataURL('image/jpeg', .82) }); ui.toast('تم تحديث الصورة'); HR.refresh(); }; img.src = URL.createObjectURL(f); });
+      else if (a === 'photo') pick('image/*', async f => {
+        const img = new Image();
+        img.onload = async () => {
+          const s = Math.min(img.width, img.height), c = document.createElement('canvas');
+          c.width = c.height = 240; c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 240, 240);
+          c.toBlob(async blob => {
+            let photoVal;
+            // [تحسين #1] لو Supabase متصل: ارفع على storage
+            if (HR.mode === 'supabase' && HR.files.uploadPhoto) {
+              ui.toast('جاري رفع الصورة...');
+              try { photoVal = await HR.files.uploadPhoto(id, blob); }
+              catch (err) { ui.toast('تعذر رفع الصورة: ' + err.message); return; }
+            } else {
+              // وضع تجريبي: base64 (لا ينصح به في production)
+              photoVal = c.toDataURL('image/jpeg', .82);
+            }
+            await store.update('employees', id, { photo: photoVal });
+            ui.toast('تم تحديث الصورة'); HR.refresh();
+          }, 'image/jpeg', 0.82);
+        };
+        img.src = URL.createObjectURL(f);
+      });
       else if (a === 'term') {
         const o = await ui.form('إنهاء الخدمة: ' + e.name, [{ n: 'endDate', l: 'آخر يوم عمل', t: 'date', req: 1 }, { n: 'endReason', l: 'السبب', opts: ['استقالة', 'انتهاء العقد', 'إنهاء من الشركة', 'تقاعد', 'أخرى'] }, { n: 'note', l: 'ملاحظات' }], { endDate: td });
         if (!o) return; if (e.hire && o.endDate < e.hire) return ui.toast('آخر يوم عمل قبل تاريخ التعيين');

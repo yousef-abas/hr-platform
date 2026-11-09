@@ -28,7 +28,22 @@
     push('طلبات إجازة معلقة داخل الفترة (لسه ما اتحسمتش)', L0.filter(l => l.status === 'معلقة' && l.from <= per.end && l.to >= per.start).map(l => (E0.find(e => e.id === l.empId) || {}).name || '؟'));
     if (rules.attendance.auto) push('موظفون ما عندهمش أي حضور مسجل في الفترة (هيتحسبوا غياب كامل)', rows.filter(r => !A0.some(a => a.empId === r.id && a.in && a.date >= per.start && a.date <= per.end)).map(r => r.name));
     push('موظفون عليهم تنبيهات في الحساب', rows.filter(r => r.calc.flags.length).map(r => r.name + ' (' + r.calc.flags.join('، ') + ')'));
-    push('موظفون بدون IBAN أو بنك (مش هيدخلوا ملف التحويل)', rows.filter(r => { const e = E0.find(x => x.id === r.id) || {}; return !e.iban || !e.bank; }).map(r => r.name));
+
+    // [تحسين #10] تحقق من صيغة IBAN المصري: EG + 27 رقم = 29 حرف
+    const ibanOk = iban => {
+      if (!iban) return false;
+      const clean = String(iban).replace(/\s/g, '').toUpperCase();
+      return /^EG\d{27}$/.test(clean);
+    };
+    push('موظفون بدون IBAN أو بنك أو IBAN صيغته غلط (مش هيدخلوا ملف التحويل)',
+      rows.filter(r => { const e = E0.find(x => x.id === r.id) || {}; return !e.bank || !ibanOk(e.iban); }).map(r => {
+        const e = E0.find(x => x.id === r.id) || {};
+        if (!e.bank) return r.name + ' (بنك ناقص)';
+        if (!e.iban) return r.name + ' (IBAN ناقص)';
+        return r.name + ' (IBAN: ' + String(e.iban).replace(/\s/g, '') + ' — صيغة غير صحيحة، المطلوب EG + 27 رقم)';
+      })
+    );
+
     push('موظفون راتبهم جزئي (تعيين أو إنهاء خدمة داخل الفترة): اتحسب بالتناسب تلقائيًا، راجع الأيام', rows.filter(r => r.calc.meta.prorated).map(r => r.name + ' (' + r.calc.meta.prorated.days + ' من ' + r.calc.meta.prorated.of + ' يوم)'));
     return items;
   };
@@ -50,16 +65,29 @@
 
   /* ---- تصدير Excel ---- */
   const save = (wb, name) => window.XLSX.writeFile(wb, name);
+
+  // [تحسين #10] دالة التحقق من IBAN المصري (EG + 27 رقم = 29 حرف)
+  const ibanOk = iban => iban && /^EG\d{27}$/i.test(String(iban).replace(/\s/g, ''));
+
   T.exportBank = function (rows, E0, month) {
-    const X = window.XLSX, data = [['اسم الموظف', 'البنك', 'رقم الحساب / IBAN', 'المبلغ', 'الشهر', 'ملاحظات']]; let total = 0, miss = 0;
+    const X = window.XLSX, data = [['اسم الموظف', 'البنك', 'رقم الحساب / IBAN', 'المبلغ', 'الشهر', 'ملاحظات']]; let total = 0, miss = 0, badIban = 0;
     rows.filter(r => r.calc.net > 0).forEach(r => {
-      const e = E0.find(x => x.id === r.id) || {}, bad = !e.iban; if (bad) miss++;
-      total += r.calc.net; data.push([r.name, e.bank || '', e.iban || '', r.calc.net, month, bad ? 'IBAN ناقص' : '']);
+      const e = E0.find(x => x.id === r.id) || {};
+      const noIban = !e.iban, noBank = !e.bank;
+      const ibanInvalid = e.iban && !ibanOk(e.iban);
+      if (noIban || noBank || ibanInvalid) miss++;
+      if (ibanInvalid) badIban++;
+      total += r.calc.net;
+      let note = '';
+      if (noBank) note = 'البنك ناقص';
+      else if (noIban) note = 'IBAN ناقص';
+      else if (ibanInvalid) note = 'IBAN صيغته غير صحيحة';
+      data.push([r.name, e.bank || '', e.iban || '', r.calc.net, month, note]);
     });
-    data.push([]); data.push(['الإجمالي', '', '', Math.round(total * 100) / 100, month, '']);
-    const wb = X.utils.book_new(), ws = X.utils.aoa_to_sheet(data); ws['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 10 }, { wch: 14 }];
+    data.push([]); data.push(['الإجمالي', '', '', Math.round(total * 100) / 100, month, badIban ? badIban + ' IBAN صيغته غير صحيحة' : '']);
+    const wb = X.utils.book_new(), ws = X.utils.aoa_to_sheet(data); ws['!cols'] = [{ wch: 28 }, { wch: 20 }, { wch: 32 }, { wch: 14 }, { wch: 10 }, { wch: 24 }];
     X.utils.book_append_sheet(wb, ws, 'تحويل'); save(wb, 'bank-transfer-' + month + '.xlsx');
-    return { count: rows.filter(r => r.calc.net > 0).length, missing: miss, total };
+    return { count: rows.filter(r => r.calc.net > 0).length, missing: miss, badIban, total };
   };
   T.exportAccountant = function (rows, month) {
     const X = window.XLSX, L = (c, k) => c.lines.filter(l => l.label === k).reduce((s, l) => s + l.amount, 0), r2 = n => Math.round(n * 100) / 100;

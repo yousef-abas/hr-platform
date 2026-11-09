@@ -52,11 +52,20 @@
 
   const ZERO = { bonus: 0, absent: 0, other: 0, otNormal: 0, otNight: 0, otRest: 0, otHoliday: 0, advance: 0, penalty: 0 };
 
-  /* الحساب: emp موظف، ctx = {rules,state,adj,att:[سجلات حضوره],leaves:[إجازاته],period,today} */
+  /* الحساب: emp موظف، ctx = {rules,state,adj,att:[سجلات حضوره],leaves:[إجازاته],period,today}
+   *
+   * [تحسين #9] تنبيه مهم على الـ mapping:
+   * - الحقل في كائن الموظف (JS): emp.allow  → يعني البدلات
+   * - العمود في قاعدة البيانات:   allowances → اسم مختلف
+   * - الـ rename موجود في supabase-store.js: REN.employees = { allow: 'allowances' }
+   * - لو اتغير هذا الـ rename بدون تغيير emp.allow هنا، الحساب هيرجع 0 بدون أي error
+   * - المرجع: supabase-store.js → const REN = { employees: { allow: 'allowances' } }
+   */
   P.calc = function (emp, ctx) {
     const R = ctx.rules, ST = ctx.state, adj = Object.assign({}, ZERO, ctx.adj || {}), rm = R.rounding;
     const num = v => Number(v) || 0;
-    const basicFull = num(emp.salary), allowFull = num(emp.allow);
+    const basicFull = num(emp.salary);
+    const allowFull = num(emp.allow);  // ← allow في JS = allowances في DB (انظر التعليق أعلاه)
     const per = ctx.period, plen = P.dates(per.start, per.end).length;
     /* راتب جزئي: أيام التعيين/إنهاء الخدمة داخل الفترة */
     const pStart = emp.hire && emp.hire > per.start ? emp.hire : per.start, pEnd = emp.endDate && emp.endDate < per.end ? emp.endDate : per.end;

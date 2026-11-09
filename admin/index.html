@@ -4,14 +4,47 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>نظام الموارد البشرية</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script src="vendor/chart.umd.js"></script>
 </head>
 <body>
-<div id="splash"><i class="cl"></i><i class="cr"></i><div class="lg"><b>HR</b><span>نظام الموارد البشرية</span></div></div>
-<div id="chrome"><header id="top"></header><nav id="tabs"></nav></div>
-<main id="root"></main>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="lg">
+    <b><i>HR</i>نظام الموارد البشرية</b>
+    <span>Human Resources Management System</span>
+  </div>
+</div>
+
+<!-- App Shell -->
+<div id="shell">
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div id="sidebar-brand">
+      <i>HR</i>
+      <div><b>نظام الموارد</b><small>البشرية</small></div>
+    </div>
+    <nav id="nav"></nav>
+    <div id="sidebar-footer">
+      <div class="user-chip" id="user-chip"></div>
+      <button id="theme-btn">
+        <svg id="theme-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span>الوضع الليلي</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div id="main-wrap">
+    <header id="top"></header>
+    <main id="root"></main>
+  </div>
+
+</div>
+
 <script src="vendor/supabase.js"></script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="js/config.js"></script>
