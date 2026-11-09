@@ -1267,3 +1267,83 @@ svg.ic {
 }
 .alert-card .rows > div:last-child { border-bottom: none; }
 .alert-card .rows > div:hover { background: var(--sf2); }
+
+/* =====================================================================
+   Global Search
+   ===================================================================== */
+#search-wrap {
+  position: relative;
+  padding: 10px 12px 4px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sf2);
+  border: 1.5px solid var(--ln);
+  border-radius: 10px;
+  padding: 7px 12px;
+  transition: border-color .2s;
+}
+.search-box:focus-within {
+  border-color: var(--ac);
+  background: var(--bg);
+}
+.search-box svg { width: 15px; height: 15px; color: var(--mu); flex-shrink: 0; }
+.search-box input {
+  border: none; background: none; outline: none;
+  font: inherit; font-size: 13px; color: var(--tx);
+  width: 100%; min-width: 0;
+}
+.search-box input::placeholder { color: var(--mu); }
+
+.search-results {
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 12px; right: 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--ln);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px #0002;
+  z-index: 200;
+  overflow: hidden;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.sr-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--tx);
+  border-bottom: 1px solid var(--ln);
+  transition: background .15s;
+}
+.sr-item:last-child { border-bottom: none; }
+.sr-item:hover { background: var(--sf2); }
+
+.sr-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sr-icon svg { width: 15px; height: 15px; }
+
+.sr-info { flex: 1; min-width: 0; }
+.sr-info b { display: block; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-info small { font-size: 11px; color: var(--mu); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sr-type {
+  font-size: 10px; font-weight: 700;
+  background: var(--sf2); color: var(--mu);
+  padding: 2px 7px; border-radius: 20px;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.sr-empty {
+  padding: 16px; text-align: center;
+  color: var(--mu); font-size: 13px;
+}

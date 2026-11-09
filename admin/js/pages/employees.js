@@ -77,7 +77,7 @@ HR.pages.employees = {
             '<div class="emp-card-top">' +
               '<div class="emp-avatar">' +
                 (e.photo
-                  ? '<img src="' + ui.esc(e.photo) + '" alt="">'
+                  ? '<img data-photo="' + ui.esc(e.photo) + '" alt="" class="lazy-photo">'
                   : '<span>' + ui.esc((e.name || 'م').trim()[0]) + '</span>') +
               '</div>' +
               ui.tag(...(S[e.status] || S.active)) +
@@ -102,6 +102,21 @@ HR.pages.employees = {
     });
     root.querySelector('#es').onchange = e => { st.es = e.target.value; HR.refresh(); };
     root.querySelector('#d').onchange  = e => { st.dept = e.target.value; HR.refresh(); };
+
+    /* ── Lazy photo resolver: يحوّل storage path لـ signed URL ── */
+    root.querySelectorAll('img.lazy-photo').forEach(async img => {
+      const ref = img.dataset.photo;
+      if (!ref) return;
+      if (ref.startsWith('data:') || ref.startsWith('http')) {
+        img.src = ref; // base64 قديمة أو URL مباشر
+        return;
+      }
+      // storage path → signed URL
+      try {
+        const url = HR.files.photoUrl ? await HR.files.photoUrl(ref) : ref;
+        if (url) img.src = url;
+      } catch (_) { img.style.display = 'none'; }
+    });
 
     root.onclick = async e => {
       const b = e.target.closest('[data-a]'); if (!b) return;
