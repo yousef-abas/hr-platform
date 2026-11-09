@@ -1103,3 +1103,84 @@ svg.ic {
 .al.wa  { background: var(--wab); color: var(--wa);  border: 1px solid var(--wal); }
 .al.da  { background: var(--dab); color: var(--da);  border: 1px solid var(--dal); }
 .al.mu  { background: var(--sf2); color: var(--mu);  border: 1px solid var(--ln);  }
+
+/* =====================================================================
+   FIX: stat-card & kpi-card layout — منع تداخل الأرقام مع النص
+   ===================================================================== */
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--mu);
+  font-weight: 600;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-value {
+  font-size: clamp(20px, 3vw, 30px);
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--mu);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* kpi-card */
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 110px;
+}
+
+.kpi-val {
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--tx);
+  white-space: nowrap;
+}
+
+.kpi-lbl {
+  font-size: 12px;
+  color: var(--mu);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* stats grid — توزيع متساوي */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
