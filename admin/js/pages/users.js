@@ -2,13 +2,18 @@ HR.pages.users = {
   title: 'المستخدمون', icon: 'shield',
   async render(root) {
     const { store, ui } = HR;
+
+    /* جلب أحدث البيانات دائمًا — لا كاش */
     const [U, E] = await Promise.all([store.list('profiles'), store.list('employees')]);
+
     const R = [['admin', 'مدير النظام'], ['hr', 'موارد بشرية'], ['employee', 'موظف']];
     const roleColor = { admin: '#dc2626', hr: '#2563eb', employee: '#16a34a' };
-    const roleIcon  = { admin: 'shield', hr: 'users', employee: 'user' };
+    const roleIcon  = { admin: 'shield',  hr: 'users',   employee: 'user' };
 
     root.innerHTML =
-      ui.head('المستخدمون والصلاحيات', 'حدد دور كل حساب وربطه بالموظف', '') +
+      ui.head('المستخدمون والصلاحيات', 'حدد دور كل حساب وربطه بالموظف',
+        '<button class="btn ghost" data-a="refresh">🔄 تحديث</button>'
+      ) +
 
       /* KPI */
       '<div class="kpi-row">' +
@@ -35,12 +40,21 @@ HR.pages.users = {
                 '<small>' + ui.esc(u.email || '') + '</small>' +
               '</div>' +
               '<div class="user-ctrl">' +
+                /* Role selector */
                 '<select data-f="role" class="sel-sm">' +
                   R.map(r => '<option value="' + r[0] + '"' + (u.role === r[0] ? ' selected' : '') + '>' + r[1] + '</option>').join('') +
                 '</select>' +
+                /* Employee link — يعرض كل الموظفين النشطين */
                 '<select data-f="employeeId" class="sel-sm">' +
                   '<option value="">بدون ربط</option>' +
-                  E.map(e => '<option value="' + e.id + '"' + (u.employeeId === e.id ? ' selected' : '') + '>' + ui.esc(e.name) + '</option>').join('') +
+                  E
+                    .filter(e => e.status !== 'terminated')
+                    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'))
+                    .map(e =>
+                      '<option value="' + e.id + '"' + (u.employeeId === e.id ? ' selected' : '') + '>' +
+                        ui.esc(e.name) + (e.title ? ' — ' + ui.esc(e.title) : '') +
+                      '</option>'
+                    ).join('') +
                 '</select>' +
               '</div>' +
             '</div>'
@@ -54,10 +68,16 @@ HR.pages.users = {
         '<div class="steps">' +
           '<div class="step"><span class="step-n">1</span><p>افتح Supabase → <b>Authentication → Users → Add user</b></p></div>' +
           '<div class="step"><span class="step-n">2</span><p>اكتب الإيميل والباسورد وفعّل <b>Auto Confirm User</b></p></div>' +
-          '<div class="step"><span class="step-n">3</span><p>ارجع هنا وحدّث الصفحة، هيظهر الحساب في الجدول — حدد دوره وربطه بالموظف</p></div>' +
+          '<div class="step"><span class="step-n">3</span><p>ارجع هنا واضغط <b>تحديث</b>، هيظهر الحساب في القائمة — حدد دوره وربطه بالموظف</p></div>' +
         '</div>' +
-        '<p class="mu" style="margin-top:8px">إنشاء الحسابات من جوه النظام محتاج مفتاح سري ما ينفعش يتحط في المتصفح، فبيتعمل لاحقًا بشكل آمن. أي حساب جديد دوره "موظف" تلقائيًا.</p>' +
+        '<div class="al wa" style="margin-top:12px">' +
+          '<span>!</span>' +
+          '<div>لو أضفت موظف جديد من صفحة الموظفين وعايز تربطه بحساب، اضغط <b>تحديث</b> الأول عشان يظهر اسمه في القائمة.</div>' +
+        '</div>' +
       '</div>';
+
+    /* ── Events ── */
+    root.querySelector('[data-a="refresh"]').onclick = () => HR.refresh();
 
     root.onchange = async e => {
       const t = e.target; if (!t.dataset.f) return;
@@ -66,9 +86,8 @@ HR.pages.users = {
       if (t.dataset.f === 'role' && u.id === (HR.user && HR.user.id) && t.value !== 'admin') {
         if (!confirm('هتشيل صلاحية المدير من حسابك أنت. متأكد؟')) { t.value = u.role; return; }
       }
-      await store.update('profiles', id, { [t.dataset.f]: t.value });
+      await store.update('profiles', id, { [t.dataset.f]: t.value || null });
       ui.toast('✅ تم الحفظ');
-      HR.refresh();
     };
   }
 };

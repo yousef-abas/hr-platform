@@ -1052,3 +1052,54 @@ td.net b { font-size: 16px; font-weight: 900; }
   .slip-wrap    { grid-template-columns: 1fr; }
   .bal-grid     { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   BUG FIXES — Nov 2026
+   ===================================================================== */
+
+/* ── Fix: .who inside table cells & cards ─────────────────────────────
+   ui.who() now has inline styles so .who class is just a helper reset  */
+.who { display: flex; align-items: center; gap: 8px; }
+.who .av {
+  width: 32px; height: 32px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 13px;
+}
+.who > div { min-width: 0; }
+.who > div > div { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who small { color: var(--mu); display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Fix: emp-card-body — يستخدم emp-name/title مباشرة لا who() ─────── */
+.emp-card-body .emp-name  { font-weight: 800; font-size: 15px; display: block; margin-bottom: 2px; }
+.emp-card-body .emp-title { font-size: 13px; color: var(--mu); display: block; margin-bottom: 8px; }
+.emp-card-body .emp-dept,
+.emp-card-body .emp-hire  {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12.5px; color: var(--mu); margin-bottom: 3px;
+}
+.emp-card-body .emp-dept svg,
+.emp-card-body .emp-hire svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+/* ── Fix: ic SVG — حتى لو الصفحة كانت تستخدم .ic بدون fill=none ─────── */
+svg.ic {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ── Fix: attendance — dur-badge لو مفيش وقت ───────────────────────── */
+.dur-badge { color: var(--mu); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+
+/* ── Fix: .al alert boxes ── */
+.al {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; font-size: 14px;
+}
+.al > span { font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+.al.ok  { background: var(--okb); color: var(--ok);  border: 1px solid var(--okl); }
+.al.wa  { background: var(--wab); color: var(--wa);  border: 1px solid var(--wal); }
+.al.da  { background: var(--dab); color: var(--da);  border: 1px solid var(--dal); }
+.al.mu  { background: var(--sf2); color: var(--mu);  border: 1px solid var(--ln);  }
