@@ -75,7 +75,22 @@ HR.pages.profile = {
     const soon = ds.filter(x => x.s[1] === 'wa'); soon.forEach(x => al.push(['wa', x.t.l + ': ' + x.s[0]]));
     if (late >= 3) al.push(['wa', 'تأخر ' + late + ' مرات هذا الشهر']);
 
-    const tabs = [['ov', 'نظرة عامة'], ['pe', 'البيانات الشخصية'], ['jb', 'الوظيفة والعقد'], ['dc', 'المستندات'], ['at', 'الحضور'], ['lv', 'الإجازات'], ['py', 'الرواتب'], ['pf', 'الأداء'], ['tl', 'السجل']];
+    /* فريق هذا الموظف لو كان مديراً */
+    const myTeam = E.filter(x => x.managerId === e.id && x.status !== 'terminated');
+    const isManager = myTeam.length > 0;
+
+    const tabs = [
+      ['ov', 'عامة'],
+      ['pe', 'البيانات الشخصية'],
+      ['jb', 'الوظيفة والعقد'],
+      ...(isManager ? [['tm', '👥 فريقي (' + myTeam.length + ')']] : []),
+      ['dc', 'المستندات'],
+      ['at', 'الحضور'],
+      ['lv', 'الإجازات'],
+      ['py', 'الرواتب'],
+      ['pf', 'الأداء'],
+      ['tl', 'السجل']
+    ];
     const V = {
       ov: () => '<div class="card"><h3>تنبيهات</h3>' + (al.length ? al.map(x => '<div class="al ' + x[0] + '">' + esc(x[1]) + '</div>').join('') : '<div class="al ok">لا توجد تنبيهات على هذا الموظف</div>') + '</div>' +
         '<div class="g2"><div class="card"><h3>الحضور آخر 6 شهور (أيام)</h3><div class="cv"><canvas id="c1"></canvas></div></div><div class="card"><h3>التقييم مقابل متوسط القسم</h3><div class="cv"><canvas id="c2"></canvas></div></div></div>' +
@@ -88,7 +103,39 @@ HR.pages.profile = {
       lv: () => '<div class="card"><h3>أرصدة السنة الحالية</h3>' + LRU.types.map(t => { const b = HR.leaves.balance(e, t.name, td, L, LRU, PCF.rules); return b.unlimited ? '<div class="bal"><span>' + esc(t.name) + '</span><span>استخدم ' + b.used + ' يوم (بدون حد)</span></div>' : '<div class="bal"><span>' + esc(t.name) + '</span><div class="pb"><i style="width:' + Math.min(100, b.used / b.total * 100) + '%;background:' + t.color + '"></i></div><span>' + b.remaining + ' متبقي من ' + b.total + (b.carry ? ' (فيها ' + b.carry + ' مرحّلة)' : '') + '</span></div>'; }).join('') + '</div><div class="card tw"><h3>الطلبات</h3><table><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th><th>القرار</th></tr>' + L.slice().reverse().map(l => '<tr><td>' + esc(l.type) + '</td><td>' + l.from + '</td><td>' + l.to + '</td><td>' + l.days + '</td><td>' + ui.tag(l.status, { 'معتمدة': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa' }[l.status]) + '</td><td style="white-space:normal;color:var(--mu);font-size:13px">' + esc(l.status === 'مرفوضة' && l.rejectReason ? 'سبب الرفض: ' + l.rejectReason : (l.decidedBy || '')) + '</td></tr>').join('') + '</table>' + (L.length ? '' : '<div class="em">لا توجد طلبات</div>') + '</div>',
       py: () => { const my = LINES.map(l => ({ run: RUNS.find(r => r.id === l.runId), c: (l.data || {}).calc })).filter(x => x.run && x.c).sort((x, y) => y.run.month < x.run.month ? -1 : 1); return '<div class="card"><h3>الراتب الحالي</h3>' + kv([['الأساسي', ui.money(e.salary)], ['البدلات', ui.money(e.allow)], ['مشمول بالتأمينات', e.insured === false ? 'لا' : 'نعم']]) + '<p style="color:var(--mu);font-size:13px">الحساب التفصيلي وقواعده في صفحة <a href="#payroll" style="color:var(--ac)">الرواتب</a>.</p></div><div class="card tw"><h3>الأشهر المعتمدة</h3><table><tr><th>الشهر</th><th>الإجمالي</th><th>الخصومات</th><th>الصافي</th><th>الحالة</th></tr>' + my.map(x => '<tr><td>' + x.run.month + '</td><td>' + ui.money(x.c.gross) + '</td><td>' + ui.money(x.c.deductions) + '</td><td class="net">' + ui.money(x.c.net) + '</td><td>' + ui.tag(x.run.status === 'paid' ? 'مصروف' : 'معتمد', 'ok') + '</td></tr>').join('') + '</table>' + (my.length ? '' : '<div class="em">لا توجد أشهر معتمدة بعد</div>') + '</div>'; },
       pf: () => '<div class="card"><h3>متوسط التقييم</h3>' + (R.length ? '<b style="font-size:28px">' + avg.toFixed(1) + '</b> ' + ui.stars(avg) + ' <span style="color:var(--mu)">(' + R.length + ' تقييم)</span>' : '<div class="em">لا توجد تقييمات. أضف من صفحة <a href="#performance" style="color:var(--ac)">تقييم الأداء</a>.</div>') + '</div>' + (R.length ? '<div class="card tw"><table><tr><th>الفترة</th><th>الجودة</th><th>التعاون</th><th>الالتزام</th><th>المبادرة</th><th>المتوسط</th><th>ملاحظات</th></tr>' + R.map(r => '<tr><td>' + r.period + '</td><td>' + r.q + '</td><td>' + r.t + '</td><td>' + r.p + '</td><td>' + r.i + '</td><td><b>' + r.avg.toFixed(1) + '</b></td><td>' + esc(r.note || '') + '</td></tr>').join('') + '</table></div>' : ''),
-      tl: () => { const it = T.concat([{ id: '', date: e.hire, type: 'تعيين', text: 'الانضمام للشركة بوظيفة ' + e.title }]).sort((a, b) => b.date < a.date ? -1 : 1); return '<div class="card"><div class="ph" style="margin-bottom:12px"><h3 style="margin:0">السجل الوظيفي</h3><button class="btn sm" data-a="tadd">+ إضافة حدث</button></div><div class="tl">' + it.map(x => '<div data-id="' + x.id + '"><b>' + esc(x.type) + '</b> <small>' + x.date + '</small>' + (x.id ? ' <button class="btn danger sm" data-a="tdel">حذف</button>' : '') + '<div>' + esc(x.text) + '</div></div>').join('') + '</div></div>'; }
+      tm: () => {
+        const mgr = E.find(x => x.id === e.managerId);
+        return '<div class="card">' +
+          '<div class="ph" style="margin-bottom:16px">' +
+            '<h3 style="margin:0">👥 الفريق المباشر (' + myTeam.length + ' موظف)</h3>' +
+            (mgr ? '<span style="font-size:13px;color:var(--mu)">المدير: <b>' + esc(mgr.name) + '</b></span>' : '') +
+          '</div>' +
+          '<div class="emp-grid">' +
+            myTeam.map(m => {
+              const col = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'][m.name.length % 5];
+              return '<div class="emp-card" data-id="' + esc(m.id) + '" style="cursor:pointer">' +
+                '<div class="emp-card-top">' +
+                  '<div class="emp-avatar">' +
+                    (m.photo
+                      ? '<img data-photo="' + esc(m.photo) + '" class="lazy-photo" alt="">'
+                      : '<span style="background:' + col + '">' + (m.name||'?').trim()[0] + '</span>') +
+                  '</div>' +
+                  ui.tag('نشط', 'ok') +
+                '</div>' +
+                '<div class="emp-card-body">' +
+                  '<b class="emp-name">' + esc(m.name) + '</b>' +
+                  '<span class="emp-title">' + esc(m.title || '') + '</span>' +
+                  '<span class="emp-dept">' + ui.icon('grid') + esc(m.dept || '') + '</span>' +
+                '</div>' +
+                '<div class="emp-card-foot">' +
+                  '<button class="btn sm" data-a="go-profile">الملف</button>' +
+                '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+      },
+      tl: () => { const it = T.concat([{ id: '', date: e.hire, type: 'تعيين', text: 'الانضمام للوظيفة بوظيفة ' + e.title }]).sort((a, b) => b.date < a.date ? -1 : 1); return '<div class="card"><div class="ph" style="margin-bottom:12px"><h3 style="margin:0">السجل الوظيفي</h3><button class="btn sm" data-a="tadd">+ أضف حدثاً</button></div><div class="tl">' + it.map(x => '<div data-id="' + x.id + '"><b>' + esc(x.type) + '</b> <small>' + x.date + '</small>' + (x.id ? ' <button class="btn danger sm" data-a="tdel">حذف</button>' : '') + '<div>' + esc(x.text) + '</div></div>').join('') + '</div></div>'; }
     };
 
     // [تحسين #1] الصورة: لو storage path استخدم photoUrl، لو base64 قديم استخدمه مباشرة
@@ -136,6 +183,7 @@ HR.pages.profile = {
       const b = ev.target.closest('[data-a],[data-t]'); if (!b) return;
       if (b.dataset.t) { st.ptab = b.dataset.t; HR.refresh(); return; }
       const a = b.dataset.a, tr = b.closest('tr') || b.closest('[data-id]'), k = tr && tr.dataset.k, dt = HR.docTypes.find(x => x.k === k);
+      if (a === 'go-profile') { location.hash = 'profile-' + btn.closest('[data-id]').dataset.id; return; }
       if (a === 'print') window.print();
       else if (a === 'photo') pick('image/*', async f => {
         const img = new Image();
