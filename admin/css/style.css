@@ -1347,3 +1347,71 @@ svg.ic {
   padding: 16px; text-align: center;
   color: var(--mu); font-size: 13px;
 }
+
+/* =====================================================================
+   Org Chart
+   ===================================================================== */
+.org-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px 0;
+}
+
+.org-node {
+  position: relative;
+  padding-right: calc(var(--depth, 0) * 28px);
+}
+
+.org-node + .org-node { margin-top: 4px; }
+
+.org-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--sf2);
+  border: 1.5px solid var(--ln);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+.org-card:hover { border-color: var(--col, var(--ac)); background: var(--bg); }
+
+.org-card::before {
+  content: '';
+  position: absolute;
+  right: -14px; top: 50%;
+  width: 14px; height: 1.5px;
+  background: var(--ln);
+  display: var(--depth, 0) > 0 ? block : none;
+}
+
+.org-av {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; font-size: 16px; flex-shrink: 0;
+}
+
+.org-info { flex: 1; min-width: 0; }
+.org-info b { display: block; font-size: 13px; font-weight: 800; }
+.org-info small { font-size: 11px; color: var(--mu); }
+
+.org-count {
+  background: var(--col, var(--ac));
+  color: #fff;
+  font-size: 11px; font-weight: 800;
+  padding: 2px 7px; border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.org-children {
+  margin-right: 20px;
+  padding-right: 8px;
+  border-right: 1.5px solid var(--ln);
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

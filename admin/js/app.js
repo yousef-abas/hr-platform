@@ -2,7 +2,7 @@
   const H = window.HR, ui = H.ui;
 
   /* ── صفحات الـ sidebar ── */
-  const NAV = [
+  const NAV_HR = [
     { section: 'الرئيسية' },
     { k: 'dashboard',   label: 'لوحة التحكم',  icon: 'grid' },
     { section: 'الموارد البشرية' },
@@ -14,13 +14,17 @@
     { section: 'المالية' },
     { k: 'payroll',     label: 'الرواتب',         icon: 'wallet' },
   ];
+  const NAV_MANAGER = [
+    { section: 'الرئيسية' },
+    { k: 'manager',   label: 'فريقي',            icon: 'users' },
+    { k: 'leaves',    label: 'الإجازات',          icon: 'calendar' },
+  ];
   const ADMIN_EXTRA = [
     { section: 'الإدارة' },
     { k: 'users', label: 'المستخدمون', icon: 'shield' },
     { k: 'audit', label: 'سجل التعديلات', icon: 'list' },
   ];
-  const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية' };
-  const AVATAR_COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];
+  const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', employee: 'موظف' };
 
   window.addEventListener('unhandledrejection', e => {
     ui.toast('تعذر تنفيذ العملية: ' + ((e.reason && e.reason.message) || e.reason));
@@ -167,7 +171,12 @@
   }
 
   function start() {
-    const allNav = H.user.role === 'admin' ? [...NAV, ...ADMIN_EXTRA] : NAV;
+    const role = H.user.role;
+    const allNav = role === 'manager'
+      ? NAV_MANAGER
+      : (role === 'admin' || role === 'hr')
+        ? (role === 'admin' ? [...NAV_HR, ...ADMIN_EXTRA] : NAV_HR)
+        : NAV_HR; // employee — لوحة تحكم فقط (مرحلة لاحقة)
     const keys   = allNav.filter(n => n.k).map(n => n.k);
     const nav    = document.getElementById('nav');
     const root   = document.getElementById('root');

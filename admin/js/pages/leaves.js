@@ -14,11 +14,12 @@ HR.pages.leaves = {
     const emp  = id => E.find(e => e.id === id) || { name: 'محذوف' };
     const tcol  = n => (L.type(rules, n) || {}).color || '#5b738b';
     const tchip = n => '<span class="tag" style="background:' + tcol(n) + '22;color:' + tcol(n) + '">' + esc(n) + '</span>';
-
-    const pending   = LV.filter(l => l.status === 'معلقة').length;
-    const approved  = LV.filter(l => l.status === 'معتمدة').length;
+    const pending   = LV.filter(l => l.status === 'معلقة' || l.status === 'معلقة HR').length;
+    const hrPending = LV.filter(l => l.status === 'معلقة HR').length;
+    const approved  = LV.filter(l => l.status === 'موافق عليها').length;
     const rejected  = LV.filter(l => l.status === 'مرفوضة').length;
-    const totalDays = LV.filter(l => l.status === 'معتمدة').reduce((s, l) => s + (l.days || 0), 0);
+    const totalDays = LV.filter(l => l.status === 'موافق عليها').reduce((s, l) => s + (l.days || 0), 0);
+
 
     const VIEWS = [
       ['req',   'الطلبات' + (pending ? ' <span class="nb" style="position:static;margin-right:4px">' + pending + '</span>' : '')],
@@ -83,11 +84,12 @@ HR.pages.leaves = {
                 '<td>' + tchip(l.type) + '</td>' +
                 '<td>' + l.from + '</td>' +
                 '<td>' + l.to + '</td>' +
-                '<td><b>' + l.days + '</b></td>' +
-                '<td>' + ui.tag(l.status, { معتمدة: 'ok', مرفوضة: 'da', معلقة: 'wa' }[l.status]) + '</td>' +
+                '<td>' + ui.tag(l.status, {'موافق عليها':'ok','مرفوضة':'da','معلقة':'wa','معلقة HR':'wa'}[l.status]) + '</td>' +
                 '<td style="white-space:normal;min-width:140px;font-size:13px;color:var(--mu)">' + esc(decision) + '</td>' +
-                '<td>' + (l.status === 'معلقة'
-                  ? '<div style="display:flex;gap:6px"><button class="btn sm" data-a="ok">اعتماد</button><button class="btn danger sm" data-a="no">رفض</button></div>'
+                '<td>' + (l.status === 'معلقة HR'
+                  ? '<div style="display:flex;gap:6px"><button class="btn sm" data-a="ok">موافقة HR</button><button class="btn danger sm" data-a="no">رفض</button></div>'
+                  : l.status === 'معلقة'
+                  ? '<span style="font-size:12px;color:var(--mu)">في انتظار المدير</span>'
                   : '') + '</td>' +
               '</tr>';
             }).join('') +
@@ -219,26 +221,35 @@ HR.pages.leaves = {
           { n: 'note',  l: 'ملاحظات' }
         ], { from: today, to: today });
         if (!o) return;
-        o.days = L.workdays(o.from, o.to, pay);
         o.status = 'معلقة';
         await store.create('leaves', o);
-        ui.toast('✅ تم رفع طلب الإجازة');
+        ui.toast('تم رفع طلب الإجازة');
         HR.refresh();
       }
       else if (a === 'ok') {
         const l = LV.find(x => x.id === id);
         const bal = L.balance(emp(l.empId), l.type, today, LV, rules, pay);
         if (!bal.unlimited && l.days > bal.remaining + (bal.pending || 0)) {
-          if (!confirm('الرصيد المتبقي أقل من الأيام المطلوبة. تريد تكمل على أي حال؟')) return;
+          if (!confirm('الرصيد المتبقي أقل من الأيام المطلوبة. تأكيد؟')) return;
         }
-        await store.update('leaves', id, { status: 'معتمدة', decidedBy: HR.user.email });
-        ui.toast('✅ تم الاعتماد'); HR.refresh();
+        await store.update('leaves', id, {
+          status: 'موافق عليها',
+          decidedBy: HR.user.email,
+          decidedAt: new Date().toISOString()
+        });
+        ui.toast('✅ تمت الموافقة النهائية');
+        HR.refresh();
       }
       else if (a === 'no') {
         const reason = await ui.prompt('سبب الرفض (اختياري)');
         if (reason === null) return;
-        await store.update('leaves', id, { status: 'مرفوضة', rejectReason: reason, decidedBy: HR.user.email });
-        ui.toast('تم الرفض'); HR.refresh();
+        await store.update('leaves', id, {
+          status: 'مرفوضة',
+          rejectReason: reason,
+          decidedBy: HR.user.email
+        });
+        ui.toast('تم الرفض');
+        HR.refresh();
       }
     };
   }

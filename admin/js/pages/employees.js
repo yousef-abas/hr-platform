@@ -1,15 +1,21 @@
 HR.empFields = [
-  { n: 'name', l: 'الاسم', req: 1 }, { n: 'nid', l: 'الرقم القومي (14 رقم)' },
-  { n: 'title', l: 'الوظيفة', req: 1 }, { n: 'dept', l: 'القسم', req: 1 },
-  { n: 'phone', l: 'الموبايل', t: 'tel' }, { n: 'email', l: 'الإيميل', t: 'email' },
-  { n: 'salary', l: 'الراتب الأساسي', t: 'number', req: 1 }, { n: 'allow', l: 'البدلات الشهرية', t: 'number' },
-  { n: 'hire', l: 'تاريخ التعيين', t: 'date', req: 1 },
-  { n: 'status', l: 'الحالة', opts: [['active', 'نشط'], ['leave', 'في إجازة'], ['terminated', 'منتهي خدمته']] }
+  { n: 'name',      l: 'الاسم',                    req: 1 },
+  { n: 'nid',       l: 'الرقم القومي (14 رقم)' },
+  { n: 'title',     l: 'الوظيفة',                  req: 1 },
+  { n: 'dept',      l: 'القسم',                    req: 1 },
+  { n: 'managerId', l: 'المدير المباشر' },
+  { n: 'phone',     l: 'الموبايل',                 t: 'tel' },
+  { n: 'email',     l: 'الإيميل',                  t: 'email' },
+  { n: 'salary',    l: 'الراتب الأساسي',           t: 'number', req: 1 },
+  { n: 'allow',     l: 'البدلات الشهرية',          t: 'number' },
+  { n: 'hire',      l: 'تاريخ التعيين',            t: 'date',   req: 1 },
+  { n: 'status',    l: 'الحالة', opts: [['active','نشط'],['leave','في إجازة'],['terminated','منتهي خدمته']] }
 ];
 HR.fixEmp = o => {
   o.salary = +o.salary; o.allow = +o.allow || 0;
   if (o.remoteOk !== undefined) o.remoteOk = o.remoteOk === true || o.remoteOk === 'true';
   if (o.insured !== undefined) o.insured = !(o.insured === false || o.insured === 'false');
+  if (!o.managerId) delete o.managerId;
   const r = o.nid && HR.ui.nid(o.nid); if (r) Object.assign(o, r);
   return o;
 };
