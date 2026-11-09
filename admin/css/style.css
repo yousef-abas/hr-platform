@@ -1237,3 +1237,33 @@ svg.ic {
   gap: 12px !important;
   margin-bottom: 20px !important;
 }
+
+/* =====================================================================
+   Alerts Grid — dashboard
+   ===================================================================== */
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.alert-card { padding: 0 !important; overflow: hidden; }
+
+.alert-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; font-weight: 700; font-size: 14px;
+  border-bottom: 1px solid var(--ln);
+}
+.alert-head.wa { background: var(--wab); color: var(--wa); }
+.alert-head.da { background: var(--dab); color: var(--da); }
+
+.alert-card .rows { padding: 4px 0; }
+.alert-card .rows > div {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 10px 16px;
+  border-bottom: 1px solid var(--ln);
+  transition: background .15s;
+}
+.alert-card .rows > div:last-child { border-bottom: none; }
+.alert-card .rows > div:hover { background: var(--sf2); }
