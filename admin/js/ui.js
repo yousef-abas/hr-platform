@@ -60,17 +60,18 @@
     return { el: o.querySelector('.dp'), close };
   }
 
-  /* ── who() — avatar + name + title ── */
+  /* ── who() - avatar + name + title ── */
   function who(e) {
     const c = COL[(e.name || '').length % COL.length];
     const av = e.photo
-      ? '<img class="av" alt="" src="' + esc(e.photo) + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+      ? '<img class="av lazy-photo" data-photo="' + esc(e.photo) + '" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">'
       : '<span class="av" style="width:32px;height:32px;border-radius:50%;background:' + c + ';display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0">' + esc((e.name || '؟').trim()[0]) + '</span>';
     return '<div class="who" style="display:flex;align-items:center;gap:8px">' + av +
       '<div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(e.name || '') + '</div>' +
       (e.title ? '<small style="color:var(--mu);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(e.title) + '</small>' : '') +
       '</div></div>';
   }
+
 
   /* ── head() ── */
   function head(h, sub, tools) {

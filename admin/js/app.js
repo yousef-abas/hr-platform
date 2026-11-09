@@ -277,8 +277,19 @@
         sec.innerHTML = '<div class="card em">خطأ في تحميل الصفحة: ' + ui.esc(e.message) + '</div>';
         console.error(e);
       }
-
       updateBadge();
+
+      /* ── Lazy photo resolver (global - يشتغل في كل الصفحات) ── */
+      root.querySelectorAll('img.lazy-photo').forEach(async img => {
+        const ref = img.dataset.photo;
+        if (!ref) return;
+        if (ref.startsWith('data:') || ref.startsWith('http')) { img.src = ref; return; }
+        try {
+          const url = H.files.photoUrl ? await H.files.photoUrl(ref) : ref;
+          if (url) img.src = url;
+        } catch (_) { img.style.display = 'none'; }
+      });
+
 
       if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
     }
