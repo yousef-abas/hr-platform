@@ -176,23 +176,11 @@
     nav.innerHTML = allNav.map(n => {
       if (n.section) return '<div class="nav-sec">' + n.section + '</div>';
       return '<a data-k="' + n.k + '" href="#' + n.k + '">' +
-        '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + (ui._ic ? ui._ic(n.icon) : '') + '</svg>' +
+        ui.icon(n.icon) +
         '<span>' + n.label + '</span>' +
         (n.k === 'leaves' ? '<span id="lv-badge" class="badge" style="display:none"></span>' : '') +
       '</a>';
     }).join('');
-
-    /* إعادة بناء nav icons بشكل صح */
-    nav.querySelectorAll('a[data-k]').forEach(a => {
-      const k = a.dataset.k;
-      const item = allNav.find(n => n.k === k);
-      if (!item) return;
-      const badge = a.querySelector('.badge');
-      a.innerHTML =
-        ui.icon(item.icon) +
-        '<span>' + item.label + '</span>' +
-        (k === 'leaves' ? '<span id="lv-badge" class="badge" style="display:none"></span>' : '');
-    });
 
     /* ── البحث العام في الـ sidebar ── */
     const searchWrap = buildSearchBox();
