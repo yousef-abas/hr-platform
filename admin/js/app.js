@@ -25,6 +25,7 @@
     { k: 'audit', label: 'سجل التعديلات', icon: 'list' },
   ];
   const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', employee: 'موظف' };
+  const AVATAR_COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];
 
   window.addEventListener('unhandledrejection', e => {
     ui.toast('تعذر تنفيذ العملية: ' + ((e.reason && e.reason.message) || e.reason));
