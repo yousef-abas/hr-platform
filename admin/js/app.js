@@ -317,7 +317,7 @@
 
   /* ── Splash ── */
   const sp = document.getElementById('splash');
-  requestAnimationFrame(() => sp.classList.add('open'));
-  setTimeout(() => sp.remove(), 1600);
+  setTimeout(() => sp.classList.add('open'), 3200);
+  setTimeout(() => sp.remove(), 3800);
   H.gate().then(start);
 })();
