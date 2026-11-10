@@ -7,6 +7,12 @@ HR.pages.requests = {
   icon:  'list',
 
   async render(root) {
+    const { store, ui } = HR, esc = ui.esc;
+
+    const [allEmps, allReqs] = await Promise.all([
+      store.list('employees'),
+      store.list('requests').catch(() => [])
+    ]);
 
     const empById  = id => allEmps.find(e => e.id === id) || { name: '—' };
     const tab      = HR.state.reqTab || 'loan';
@@ -19,9 +25,9 @@ HR.pages.requests = {
       : allEmps;
     const visibleIds  = new Set(visibleEmps.map(e => e.id));
 
-
     /* فلتر الطلبات للأدوار المقيدة */
     const myReqs = allReqs.filter(r => visibleIds.has(r.empId));
+
 
     const tabs = [
       { k: 'loan',     label: '💰 سلف',           count: myReqs.filter(r => r.type === 'loan'     && r.status === 'معلقة').length },
