@@ -28,7 +28,7 @@ HR.pages.recruitment = {
     const STAGES = [
       { k: 'applied',    l: 'تقديم',         c: '#6b7280' },
       { k: 'screening',  l: 'فرز أولي',       c: '#f59e0b' },
-      { k: 'interview',  l: 'مقابلة',         c: '#3b82f6' },
+      { k: 'interview',  l: 'مقابلة',         c: '#e8b87a' },
       { k: 'offer',      l: 'عرض وظيفي',      c: '#8b5cf6' },
       { k: 'hired',      l: 'تم التعيين ✓',   c: '#22c55e' },
       { k: 'rejected',   l: 'مرفوض',          c: '#ef4444' },

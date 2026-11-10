@@ -67,7 +67,7 @@ HR.pages.payroll = {
     const exp  = st.pexp;
 
     /* Status badge color */
-    const statusColor = { draft: '#6b7280', review: '#f59e0b', approved: '#22c55e', paid: '#2563eb' };
+    const statusColor = { draft: '#6b7280', review: '#f59e0b', approved: '#22c55e', paid: '#c9933a' };
 
     root.innerHTML =
       ui.head('الرواتب', 'فترة الحساب: ' + per.start + ' إلى ' + per.end,
@@ -222,7 +222,7 @@ HR.pages.payroll = {
     const deptMap = {};
     rows.forEach(r => { const d = r.dept || '—'; deptMap[d] = (deptMap[d] || 0) + r.calc.cost; });
     const depts = Object.keys(deptMap), vals = depts.map(d => deptMap[d]);
-    const colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+    const colors = ['#e8b87a','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
     if (window.Chart && document.querySelector('#pc')) {
       new Chart(document.querySelector('#pc'), {
         type: 'bar',

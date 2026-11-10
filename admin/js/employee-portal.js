@@ -37,7 +37,7 @@ HR.pages.employee = {
     const myReqs   = allRequests.filter(r => r.empId === empId);
     const pay      = cfg.rules;
     const today    = ui.today();
-    const col      = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'][e.name.length % 5];
+    const col      = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706'][e.name.length % 5];
 
     /* رصيد الإجازات */
     const balances = rules.types.map(t => {
@@ -91,7 +91,7 @@ HR.pages.employee = {
           '</div>'
         ).join('') +
         (lastLine
-          ? '<div class="kpi-card" style="--kc:#2563eb"><div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('wallet') + '</div><div class="kpi-val">' + ui.money(lastLine.line.data.calc.net) + '</div><div class="kpi-lbl">آخر راتب صافي</div></div>'
+          ? '<div class="kpi-card" style="--kc:#c9933a"><div class="kpi-ic" style="background:#fdf6e7;color:#c9933a">' + ui.icon('wallet') + '</div><div class="kpi-val">' + ui.money(lastLine.line.data.calc.net) + '</div><div class="kpi-lbl">آخر راتب صافي</div></div>'
           : '') +
         (loanLeft > 0
           ? '<div class="kpi-card" style="--kc:#ef4444"><div class="kpi-ic" style="background:#fef2f2;color:#ef4444">' + ui.icon('wallet') + '</div><div class="kpi-val">' + ui.money(loanLeft) + '</div><div class="kpi-lbl">سلف متبقية</div></div>'

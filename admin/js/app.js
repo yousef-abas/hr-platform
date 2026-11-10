@@ -35,7 +35,7 @@
     { k: 'audit',      label: 'سجل التدقيق', icon: 'list' },
   ];
   const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', supervisor: 'مشرف', employee: 'موظف' };
-  const AVATAR_COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];
+  const AVATAR_COLORS = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706'];
 
   window.addEventListener('unhandledrejection', e => {
     ui.toast('تعذر تنفيذ العملية: ' + ((e.reason && e.reason.message) || e.reason));
@@ -129,7 +129,7 @@
       type: 'موظف', icon: 'user', label: e.name,
       sub: (e.title||'') + (e.dept ? ' · ' + e.dept : ''),
       href: '#profile-' + e.id,
-      color: e.status === 'terminated' ? '#dc2626' : '#2563eb'
+      color: e.status === 'terminated' ? '#dc2626' : '#c9933a'
     }));
 
     // مرشحين

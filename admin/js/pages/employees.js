@@ -70,8 +70,8 @@ HR.pages.employees = {
           '<div class="kpi-ic" style="background:#f9fafb;color:#6b7280">' + ui.icon('x') + '</div>' +
           '<div class="kpi-val">' + terminated + '</div><div class="kpi-lbl">منتهية خدمتهم</div>' +
         '</div>' +
-        '<div class="kpi-card" style="--kc:#2563eb">' +
-          '<div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('grid') + '</div>' +
+        '<div class="kpi-card" style="--kc:#c9933a">' +
+          '<div class="kpi-ic" style="background:#fdf6e7;color:#c9933a">' + ui.icon('grid') + '</div>' +
           '<div class="kpi-val">' + depts.length + '</div><div class="kpi-lbl">قسم</div>' +
         '</div>' +
       '</div>' +

@@ -42,8 +42,8 @@ HR.pages.attendance = {
           '<div class="kpi-ic" style="background:#fef2f2;color:#dc2626">' + ui.icon('x') + '</div>' +
           '<div class="kpi-val">' + nAbsent + '</div><div class="kpi-lbl">غائب</div>' +
         '</div>' +
-        '<div class="kpi-card" style="--kc:#2563eb">' +
-          '<div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('users') + '</div>' +
+        '<div class="kpi-card" style="--kc:#c9933a">' +
+          '<div class="kpi-ic" style="background:#fdf6e7;color:#c9933a">' + ui.icon('users') + '</div>' +
           '<div class="kpi-val">' + E.length + '</div><div class="kpi-lbl">إجمالي الموظفين</div>' +
         '</div>' +
       '</div>' +

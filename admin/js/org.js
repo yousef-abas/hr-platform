@@ -34,7 +34,7 @@ HR.org = {
   renderTree(emps) {
     const ui   = HR.ui;
     const tree = this.buildTree(emps);
-    const COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];
+    const COLORS = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706'];
 
     const nodeHtml = (n, depth) => {
       const e   = n.emp;
@@ -135,8 +135,8 @@ HR.pages.manager = {
 
       /* KPIs */
       '<div class="kpi-row">' +
-        '<div class="kpi-card" style="--kc:#2563eb">' +
-          '<div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('users') + '</div>' +
+        '<div class="kpi-card" style="--kc:#c9933a">' +
+          '<div class="kpi-ic" style="background:#fdf6e7;color:#c9933a">' + ui.icon('users') + '</div>' +
           '<div class="kpi-val">' + team.length + '</div>' +
           '<div class="kpi-lbl">أعضاء الفريق</div>' +
         '</div>' +
@@ -222,7 +222,7 @@ HR.pages.manager = {
         '<h3 style="margin-bottom:14px">👥 أعضاء الفريق</h3>' +
         '<div class="emp-grid">' +
           team.map(emp => {
-            const col = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'][emp.name.length % 5];
+            const col = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706'][emp.name.length % 5];
             const isPresent = presentIds.includes(emp.id);
             const isLeave   = onLeaveNow.find(l => l.empId === emp.id);
             const badge     = isLeave ? 'wa' : isPresent ? 'ok' : 'mu';

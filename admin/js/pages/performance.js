@@ -29,8 +29,8 @@ HR.pages.performance = {
           '<div class="kpi-ic" style="background:#fffbeb;color:#d97706">' + ui.icon('star') + '</div>' +
           '<div class="kpi-val">' + avgAll + '</div><div class="kpi-lbl">متوسط التقييم</div>' +
         '</div>' +
-        '<div class="kpi-card" style="--kc:#2563eb">' +
-          '<div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('list') + '</div>' +
+        '<div class="kpi-card" style="--kc:#c9933a">' +
+          '<div class="kpi-ic" style="background:#fdf6e7;color:#c9933a">' + ui.icon('list') + '</div>' +
           '<div class="kpi-val">' + R.length + '</div><div class="kpi-lbl">إجمالي التقييمات</div>' +
         '</div>' +
         '<div class="kpi-card" style="--kc:#22c55e">' +

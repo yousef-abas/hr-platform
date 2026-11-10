@@ -54,8 +54,8 @@ HR.pages.leaves = {
             '<div class="kpi-ic" style="background:#fef2f2;color:#dc2626">' + ui.icon('x') + '</div>' +
             '<div class="kpi-val">' + rejected + '</div><div class="kpi-lbl">مرفوضة</div>' +
           '</div>' +
-          '<div class="kpi-card" style="--kc:#2563eb">' +
-            '<div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('calendar') + '</div>' +
+          '<div class="kpi-card" style="--kc:#c9933a">' +
+            '<div class="kpi-ic" style="background:#fdf6e7;color:#c9933a">' + ui.icon('calendar') + '</div>' +
             '<div class="kpi-val">' + totalDays + '</div><div class="kpi-lbl">يوم مستخدم هذا العام</div>' +
           '</div>' +
         '</div>' +

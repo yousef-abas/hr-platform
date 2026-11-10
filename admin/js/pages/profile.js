@@ -112,7 +112,7 @@ HR.pages.profile = {
           '</div>' +
           '<div class="emp-grid">' +
             myTeam.map(m => {
-              const col = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'][m.name.length % 5];
+              const col = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706'][m.name.length % 5];
               return '<div class="emp-card" data-id="' + esc(m.id) + '" style="cursor:pointer">' +
                 '<div class="emp-card-top">' +
                   '<div class="emp-avatar">' +

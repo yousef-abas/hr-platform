@@ -33,7 +33,7 @@ HR.pages.dashboard = {
 
     /* ── KPI cards ── */
     const stats = [
-      { icon: 'users',    color: '#2563eb', bg: '#eff6ff', value: act.length,     label: 'الموظفون النشطون',    sub: 'من إجمالي ' + E.length + ' في السجل',     bar: 100 },
+      { icon: 'users',    color: '#c9933a', bg: '#fdf6e7', value: act.length,     label: 'الموظفون النشطون',    sub: 'من إجمالي ' + E.length + ' في السجل',     bar: 100 },
       { icon: 'clock',    color: pct>=80?'#16a34a':'#d97706', bg: pct>=80?'#f0fdf4':'#fffbeb', value: pct+'%', label: 'نسبة الحضور اليوم', sub: present + ' من ' + act.length + ' موظف', bar: pct },
       { icon: 'calendar', color: pend.length?'#d97706':'#16a34a', bg: pend.length?'#fffbeb':'#f0fdf4', value: pend.length, label: 'طلبات معلقة', sub: away.length + ' في إجازة اليوم', bar: Math.min(100, pend.length * 20) },
       { icon: 'wallet',   color: '#7c3aed', bg: '#f5f3ff', value: ui.money(total), label: 'الرواتب الشهرية',   sub: C.length + ' مرشح في التوظيف',              bar: 100 },
@@ -41,7 +41,7 @@ HR.pages.dashboard = {
 
     /* ── Quick actions ── */
     const qa = [
-      { href:'#attendance',  icon:'clock',    label:'تسجيل حضور',    color:'#2563eb', bg:'#eff6ff' },
+      { href:'#attendance',  icon:'clock',    label:'تسجيل حضور',    color:'#c9933a', bg:'#fdf6e7' },
       { href:'#leaves',      icon:'calendar', label:'طلب إجازة',     color:'#16a34a', bg:'#f0fdf4' },
       { href:'#employees',   icon:'users',    label:'الموظفون',       color:'#7c3aed', bg:'#f5f3ff' },
       { href:'#payroll',     icon:'wallet',   label:'الرواتب',        color:'#d97706', bg:'#fffbeb' },
@@ -212,7 +212,7 @@ HR.pages.dashboard = {
 
     const depts = {};
     act.forEach(e => depts[e.dept||'غير محدد'] = (depts[e.dept||'غير محدد']||0)+1);
-    const palette = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706','#dc2626','#64748b'];
+    const palette = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706','#dc2626','#64748b'];
     new Chart(root.querySelector('#c1'), {
       type: 'doughnut',
       data: { labels: Object.keys(depts), datasets:[{ data:Object.values(depts), backgroundColor:palette, borderWidth:2, borderColor:isDark?'#111827':'#fff' }] },
@@ -228,7 +228,7 @@ HR.pages.dashboard = {
       type: 'bar',
       data: { labels:lab, datasets:[{ data:val, backgroundColor: ctx => {
         const g = ctx.chart.ctx.createLinearGradient(0,0,0,220);
-        g.addColorStop(0,'#2563eb'); g.addColorStop(1,'#2563eb40'); return g;
+        g.addColorStop(0,'#c9933a'); g.addColorStop(1,'#c9933a30'); return g;
       }, borderRadius:10, maxBarThickness:40 }] },
       options: { maintainAspectRatio:false, scales:{
         y:{ beginAtZero:true, ticks:{precision:0,color:textColor}, grid:{color:gridColor}, border:{display:false} },

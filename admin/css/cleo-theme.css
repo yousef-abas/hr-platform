@@ -472,3 +472,67 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
   0%,100% { opacity:1; }
   50%     { opacity:0; }
 }
+
+
+/* ══════════════════════════════════════════
+   LOGIN PAGE — Cleo Theme
+   ══════════════════════════════════════════ */
+#login {
+  position: fixed; inset: 0; z-index: 150;
+  display: grid; place-items: center;
+  background: radial-gradient(ellipse 70% 70% at 50% 40%, #2a1608 0%, #140b03 50%, #0a0601 100%);
+  padding: 20px;
+}
+#login::before {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -65%);
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, #e8b87a18 0%, #c9933a08 45%, transparent 70%);
+  pointer-events: none;
+}
+.lc {
+  background: #1c1008;
+  border: 1px solid #e8b87a20;
+  border-radius: 24px; padding: 36px 32px;
+  width: 100%; max-width: 420px;
+  position: relative; z-index: 1;
+  box-shadow: 0 24px 80px #00000060, 0 0 0 1px #e8b87a10;
+  animation: lcIn .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes lcIn {
+  from { opacity:0; transform: translateY(20px) scale(.97); }
+  to   { opacity:1; transform: none; }
+}
+.cleo-brand {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 28px; padding-bottom: 24px;
+  border-bottom: 1px solid #e8b87a15;
+}
+.cleo-brand svg { filter: drop-shadow(0 0 10px #e8b87a44); flex-shrink: 0; }
+.cleo-brand b {
+  display: block; font-family: 'Cinzel', serif;
+  font-size: 22px; font-weight: 900;
+  color: #e8b87a; letter-spacing: 3px; line-height: 1.1;
+}
+.cleo-brand span {
+  display: block; font-size: 11px; color: #6b4c2a;
+  letter-spacing: 2px; text-transform: uppercase; margin-top: 3px;
+}
+.lc h2 { margin: 0 0 6px; font-size: 20px; font-weight: 900; color: #f5e6cc; }
+.lc .lm { color: #7a5c3a; font-size: 13px; margin: 0 0 24px; }
+.lc label { color: #9a7a5a; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+.lc input {
+  background: #120d05 !important; border: 1px solid #e8b87a20 !important;
+  color: #f5e6cc !important; border-radius: 12px !important; padding: 12px 14px !important;
+  margin-top: 6px; transition: border-color .2s, box-shadow .2s;
+}
+.lc input:focus { border-color: #e8b87a60 !important; box-shadow: 0 0 0 3px #e8b87a10 !important; }
+.lc input::placeholder { color: #3a2a15 !important; }
+.login-btn {
+  background: linear-gradient(135deg, #e8b87a, #c9933a) !important;
+  color: #0a0601 !important; font-weight: 900 !important;
+  width: 100%; margin-top: 8px; padding: 14px !important;
+  border-radius: 12px !important; box-shadow: 0 4px 20px #c9933a40 !important;
+}
+.login-btn:hover { box-shadow: 0 6px 28px #c9933a60 !important; transform: translateY(-1px) !important; }

@@ -18,8 +18,8 @@ HR.pdf = {
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Cairo', sans-serif; color: #1e293b; background: #fff; padding: 32px; font-size: 13px; direction: rtl; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid #2563eb; }
-  .logo { font-size: 22px; font-weight: 900; color: #2563eb; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px solid #c9933a; }
+  .logo { font-size: 22px; font-weight: 900; color: #c9933a; }
   .logo span { color: #1e293b; }
   .meta { text-align: left; color: #64748b; font-size: 12px; }
   .meta b { color: #1e293b; font-size: 14px; display: block; margin-bottom: 4px; }
@@ -27,12 +27,12 @@ HR.pdf = {
   .emp-card .field label { font-size: 11px; color: #64748b; display: block; margin-bottom: 2px; }
   .emp-card .field b { font-size: 13px; font-weight: 700; }
   .section { margin-bottom: 16px; }
-  .section h3 { font-size: 13px; font-weight: 800; color: #2563eb; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; }
+  .section h3 { font-size: 13px; font-weight: 800; color: #c9933a; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; }
   table td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   table td:last-child { text-align: left; font-weight: 700; }
   table tr.total td { background: #f8fafc; font-weight: 800; border-top: 2px solid #e2e8f0; }
-  table tr.net td { background: #eff6ff; color: #2563eb; font-weight: 900; font-size: 15px; border-top: 2px solid #2563eb; }
+  table tr.net td { background: #fdf6e7; color: #c9933a; font-weight: 900; font-size: 15px; border-top: 2px solid #c9933a; }
   table tr.deduct td { color: #dc2626; }
   .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; color: #94a3b8; font-size: 11px; }
   .sign-box { text-align: center; }
@@ -130,8 +130,8 @@ HR.pdf = {
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Cairo',sans-serif; color:#1e293b; background:#fff; padding:32px; font-size:13px; direction:rtl; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; padding-bottom:16px; border-bottom:3px solid #2563eb; }
-  .logo { font-size:22px; font-weight:900; color:#2563eb; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; padding-bottom:16px; border-bottom:3px solid #c9933a; }
+  .logo { font-size:22px; font-weight:900; color:#c9933a; }
   .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
   .kpi { background:#f8fafc; border-radius:10px; padding:12px 16px; text-align:center; }
   .kpi b { font-size:24px; font-weight:900; display:block; }
@@ -200,13 +200,13 @@ HR.pdf = {
   @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Cairo',sans-serif; color:#1e293b; background:#fff; padding:32px; font-size:12px; direction:rtl; }
-  .header { display:flex; justify-content:space-between; margin-bottom:20px; padding-bottom:12px; border-bottom:3px solid #2563eb; }
-  .logo { font-size:20px; font-weight:900; color:#2563eb; }
+  .header { display:flex; justify-content:space-between; margin-bottom:20px; padding-bottom:12px; border-bottom:3px solid #c9933a; }
+  .logo { font-size:20px; font-weight:900; color:#c9933a; }
   table { width:100%; border-collapse:collapse; }
   th { background:#1e3a5f; color:#fff; padding:8px 10px; font-size:11px; text-align:right; }
   td { padding:7px 10px; border-bottom:1px solid #f1f5f9; font-size:12px; }
   tr:nth-child(even) td { background:#f8fafc; }
-  .total-row td { background:#eff6ff !important; font-weight:900; color:#2563eb; font-size:13px; border-top:2px solid #2563eb; }
+  .total-row td { background:#fdf6e7 !important; font-weight:900; color:#c9933a; font-size:13px; border-top:2px solid #c9933a; }
   @media print { body{padding:12px;} @page{size:A4 landscape;margin:8mm;} }
 </style>
 </head>
