@@ -493,7 +493,7 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
 /* ── Typewriter cursor ── */
 #splash-type {
   display: inline-block;
-  color: #94a3b8;
+  color: #c9933a;
   font-size: 16px;
   letter-spacing: .5px;
   min-height: 24px;
@@ -515,7 +515,7 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
 .lg em, #splash-type {
   display: block;
   font-style: normal;
-  color: #94a3b8;
+  color: #c9933a;
   font-size: 13px;
   letter-spacing: 3px;
   text-transform: uppercase;

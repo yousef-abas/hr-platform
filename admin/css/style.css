@@ -130,7 +130,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 8px 32px #c9933a60;
   display: grid; place-items: center; font-style: normal; font-size: 28px;
 }
-.lg span { display: block; color: #94a3b8; font-size: 16px; margin-top: 6px; letter-spacing: .5px; }
+.lg span { display: block; color: #c9933a; font-size: 16px; margin-top: 6px; letter-spacing: .5px; }
 #splash.open .lg { animation: splashOut .4s .8s both; }
 @keyframes splashIn { from { opacity:0; transform:translateY(20px) scale(.95); } to { opacity:1; transform:none; } }
 @keyframes splashOut { to { opacity:0; transform:translateY(-10px); } }
