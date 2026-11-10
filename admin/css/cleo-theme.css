@@ -488,3 +488,24 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
 }
 .gold-border { border-color: var(--ac) !important; }
 .gold-bg { background: var(--acl) !important; }
+
+
+/* ── Typewriter cursor ── */
+#splash-type {
+  display: inline-block;
+  color: #94a3b8;
+  font-size: 16px;
+  letter-spacing: .5px;
+  min-height: 24px;
+}
+#splash-type::after {
+  content: '|';
+  color: #c9933a;
+  font-weight: 300;
+  animation: blink .7s step-end infinite;
+  margin-right: 2px;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
