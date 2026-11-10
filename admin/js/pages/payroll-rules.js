@@ -36,14 +36,15 @@ HR.payrollRules = async function (root) {
     const R = W.rules, A = R.attendance, items = R.items || [], I = W.state.insurance, T = W.state.tax, L = !unlocked;
     const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
-    // [تحسين #4] تحذير واضح لو الضريبة معطّلة أو مفيش شرائح
-    const taxWarning = (!T.enabled || !(T.brackets || []).length)
-      ? '<div class="al wa" style="margin:0 0 14px"><b>⚠️ ضريبة كسب العمل ' + (!T.enabled ? 'معطّلة' : 'مفعّلة بدون شرائح') + '</b><div style="font-weight:400;margin-top:4px">راجع مع محاسبك وأدخل شرائح الدخل السنوية، ثم فعّل الضريبة. بدونها الرواتب لا تخصم الضريبة.</div></div>'
-      : '';
+    // تلميح حالة الضريبة
+    const taxWarning = (!T.enabled)
+      ? '<div class="al wa" style="margin:0 0 14px"><b>⚠️ ضريبة كسب العمل معطّلة</b><div style="font-weight:400;margin-top:4px">فعّلها من قسم الإعدادات الرسمية بالأسفل لتُطبَّق على الرواتب.</div></div>'
+      : (!T.brackets || !T.brackets.length)
+        ? '<div class="al wa" style="margin:0 0 14px"><b>⚠️ لا توجد شرائح ضريبية</b><div style="font-weight:400;margin-top:4px">أضف شريحة واحدة على الأقل لتفعيل الحساب.</div></div>'
+        : '<div class="al ok" style="margin:0 0 14px"><b>✅ ضريبة كسب العمل مفعّلة</b> — ' + T.brackets.length + ' شرائح — إعفاء سنوي ' + (T.personalExemptionAnnual ? T.personalExemptionAnnual.toLocaleString() + ' جنيه' : 'لا يوجد') + '</div>';
 
-    root.innerHTML = ui.head('قواعد الرواتب', isAdmin ? 'كل بند هنا قابل للتعديل، والنتيجة بتظهر فورًا على اليمين' : 'عرض فقط: تعديل القواعد للمدير', '<button class="btn ghost" data-a="back">رجوع للرواتب</button>') +
+    root.innerHTML = ui.head('لوائح الرواتب', isAdmin ? 'كل بند هنا ينعكس على الرواتب فالتغييرات تظهر فوراً على اليمين' : 'عرض فقط: تعديل اللوائح للمدير', '<button class="btn ghost" data-a="back">رجوع للرواتب</button>') +
       taxWarning +
-      '<div class="rl"><div>' +
       '<div class="card rcard"><h3>الدورة والحساب</h3><div class="fg">' + txt('rules.company.name', 'اسم الشركة (يظهر في القسايم)') + num('rules.startDay', 'يوم بداية الشهر (1 = شهر كامل)') + sel('rules.daysBasis', 'أساس أيام الشهر', [['30', '30 يوم ثابتة'], ['actual', 'الأيام الفعلية']], { t: 'days' }) + num('rules.hoursPerDay', 'ساعات اليوم') + sel('rules.dayValueBase', 'قيمة اليوم من', [['basic+allow', 'الأساسي + البدلات'], ['basic', 'الأساسي فقط']]) + sel('rules.rounding', 'التقريب', [['two', 'قرشين'], ['integer', 'لأقرب جنيه'], ['none', 'من غير تقريب']]) + '</div>' +
       '<div class="fg" style="margin-top:14px">' + chk('rules.proration.enabled', 'راتب جزئي للموظف المعيّن أو المنتهية خدمته في نص الشهر') + chk('rules.proration.insurance', 'التأمينات كمان بالتناسب (غير مفعّل = على الأجر كامل)') + '</div><p style="margin:14px 0 6px;color:var(--mu);font-size:13px">أيام الإجازة الأسبوعية</p><div class="fg">' + days.map((d, i) => '<label class="ck"><input type="checkbox" data-wk="' + i + '"' + (R.weekend.indexOf(i) > -1 ? ' checked' : '') + dis() + '>' + d + '</label>').join('') + '</div></div>' +
       '<div class="card rcard"><h3>بنود الراتب الإضافية <span>' + add('rules.items', '+ بند') + '</span></h3><p style="color:var(--mu);font-size:13px;margin-top:-6px">أي بدل أو عمولة أو خصم يتطبق على كل الموظفين (أو قسم معين).</p>' +

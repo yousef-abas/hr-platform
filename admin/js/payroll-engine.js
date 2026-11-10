@@ -20,7 +20,19 @@
   /* الثوابت الرسمية (قابلة للتعديل بس بتأكيد وبتتسجل) */
   P.DEFAULT_STATE = {
     insurance: { enabled: true, employeeRate: 11, employerRate: 18.75, minWage: 2700, maxWage: 16700, includeAllowances: false, effectiveFrom: '2026-01-01', source: 'حدود الأجر التأميني من الهيئة القومية للتأمين الاجتماعي (يناير 2026)' },
-    tax: { enabled: false, personalExemptionAnnual: 0, brackets: [], note: 'شرائح الضريبة لم تُراجع بعد. أدخلها من المحاسب ثم فعّلها.' }
+    tax: {
+      enabled: true,
+      personalExemptionAnnual: 20000,
+      brackets: [
+        { from: 0,       to: 40000,   rate: 0    },
+        { from: 40000,   to: 55000,   rate: 10   },
+        { from: 55000,   to: 70000,   rate: 15   },
+        { from: 70000,   to: 200000,  rate: 20   },
+        { from: 200000,  to: 400000,  rate: 22.5 },
+        { from: 400000,  to: '',      rate: 25   }
+      ],
+      note: 'شرائح ضريبة كسب العمل المصرية 2024/2025 — يمكن تعديلها من إعدادات الرواتب.'
+    }
   };
 
   const clone = o => JSON.parse(JSON.stringify(o));
