@@ -4,7 +4,7 @@ HR.pages.payroll = {
     const { store, ui, state: st } = HR, P = HR.payroll, esc = ui.esc;
     if (st.pview === 'rules') return HR.payrollRules(root);
     st.pmonth = st.pmonth || ui.today().slice(0, 7);
-    const month = st.pmonth, isAdmin = HR.user.role === 'admin';
+    const month = st.pmonth, isAdmin = HR.user.role === 'admin' || HR.user.role === 'hr';
 
     const [E0, A0, L0, ADJ, RUNS, LINES, LOANS, cfg, LRULES] = await Promise.all([
       store.list('employees'), store.list('attendance'), store.list('leaves'),

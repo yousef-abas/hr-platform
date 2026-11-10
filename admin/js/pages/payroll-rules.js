@@ -1,6 +1,6 @@
 /* شاشة قواعد الرواتب: كل بند قابل للتعديل، مع معاينة حية على موظف حقيقي */
 HR.payrollRules = async function (root) {
-  const { store, ui, state: st } = HR, P = HR.payroll, esc = ui.esc, isAdmin = HR.user.role === 'admin';
+  const { store, ui, state: st } = HR, P = HR.payroll, esc = ui.esc, isAdmin = HR.user.role === 'admin' || HR.user.role === 'hr';
   const month = st.pmonth || ui.today().slice(0, 7);
   const [E0, A0, L0, ADJ, LOANS, cfg, LRULES] = await Promise.all([store.list('employees'), store.list('attendance'), store.list('leaves'), store.list('payroll'), store.list('loans'), P.load(), HR.leaves.load()]);
   const W = { rules: JSON.parse(JSON.stringify(cfg.rules)), state: JSON.parse(JSON.stringify(cfg.state)) };

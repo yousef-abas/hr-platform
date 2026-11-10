@@ -1,0 +1,12 @@
+/* Segmented tabs للطلبات */
+.seg { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+.seg-btn {
+  flex: 1; min-width: 90px;
+  padding: 8px 10px; border-radius: 10px;
+  border: 1.5px solid var(--ln, #e2e6ec);
+  background: var(--sf, #fff);
+  font: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; color: var(--mu, #5a6a7e);
+  transition: all .15s;
+}
+.seg-btn.on { background: var(--ac, #2563eb); color: #fff; border-color: var(--ac, #2563eb); }

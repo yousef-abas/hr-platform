@@ -325,14 +325,148 @@
   }
 
   /* ── التنقل ── */
+  /* ── الطلبات ── */
+  async function requests() {
+    const td = ui.today();
+    const reqs = await A.myRequests(ME.id);
+    const tab  = H.state.reqTab || 'loan';
+
+    const tabs = [
+      { k: 'loan',     ic: '💰', label: 'سلفة' },
+      { k: 'overtime', ic: '⏰', label: 'أوفر تايم' },
+      { k: 'change',   ic: '📝', label: 'تغيير بيانات' },
+    ];
+    const rows = reqs.filter(r => r.type === tab);
+
+    const stTag = s => ({
+      'معلقة':       '<span class="tag wa">' + s + '</span>',
+      'موافق عليها': '<span class="tag ok">' + s + '</span>',
+      'مرفوضة':      '<span class="tag da">' + s + '</span>',
+    }[s] || '<span class="tag">' + s + '</span>');
+
+    const rowHtml = r => {
+      if (tab === 'loan') return (
+        '<div class="req">' +
+          '<div>' +
+            '<b>' + ui.money(r.amount) + '</b>' +
+            '<small>على ' + (r.months || '—') + ' شهر · قسط ' + ui.money(Math.round((r.amount||0)/(r.months||1))) + '</small>' +
+            (r.reason ? '<small>' + esc(r.reason) + '</small>' : '') +
+            (r.hrNote ? '<small class="errt">HR: ' + esc(r.hrNote) + '</small>' : '') +
+          '</div>' +
+          '<div class="side">' + stTag(r.status) + '</div>' +
+        '</div>'
+      );
+      if (tab === 'overtime') return (
+        '<div class="req">' +
+          '<div>' +
+            '<b>' + (r.hours || 0) + ' ساعة</b>' +
+            '<small>' + (r.date || '') + '</small>' +
+            (r.note ? '<small>' + esc(r.note) + '</small>' : '') +
+            (r.hrNote ? '<small class="errt">HR: ' + esc(r.hrNote) + '</small>' : '') +
+          '</div>' +
+          '<div class="side">' + stTag(r.status) + '</div>' +
+        '</div>'
+      );
+      if (tab === 'change') {
+        const fl = { phone: 'الهاتف', bank: 'البنك', email: 'الإيميل', address: 'العنوان', other: 'أخرى' };
+        return (
+          '<div class="req">' +
+            '<div>' +
+              '<b>' + (fl[r.field] || r.field || '') + '</b>' +
+              '<small>' + esc(r.newValue || '') + '</small>' +
+              (r.hrNote ? '<small class="errt">HR: ' + esc(r.hrNote) + '</small>' : '') +
+            '</div>' +
+            '<div class="side">' + stTag(r.status) + '</div>' +
+          '</div>'
+        );
+      }
+      return '';
+    };
+
+    const btnLabel = { loan: '+ طلب سلفة', overtime: '+ أوفر تايم', change: '+ تغيير بيانات' };
+
+    view.innerHTML =
+      '<h2 class="pt">طلباتي</h2>' +
+
+      /* Tabs */
+      '<div class="seg">' +
+        tabs.map(t =>
+          '<button class="seg-btn' + (t.k === tab ? ' on' : '') + '" data-t="' + t.k + '">' +
+            t.ic + ' ' + t.label +
+          '</button>'
+        ).join('') +
+      '</div>' +
+
+      /* زر جديد */
+      '<button class="btn block" id="new-req" style="margin:12px 0">' + btnLabel[tab] + '</button>' +
+
+      /* القائمة */
+      '<section class="card">' +
+        (rows.length
+          ? rows.map(rowHtml).join('')
+          : '<p class="mu" style="text-align:center;padding:16px">لا توجد طلبات</p>') +
+      '</section>';
+
+    /* Tabs switch */
+    view.querySelectorAll('[data-t]').forEach(b => {
+      b.onclick = () => { H.state.reqTab = b.dataset.t; requests(); };
+    });
+
+    /* زر جديد */
+    view.querySelector('#new-req').onclick = async () => {
+
+      if (tab === 'loan') {
+        const o = await ui.form('💰 طلب سلفة', [
+          { n: 'amount', l: 'المبلغ المطلوب',   t: 'number', req: 1 },
+          { n: 'months', l: 'السداد على (شهور)', t: 'number', req: 1 },
+          { n: 'reason', l: 'سبب الطلب',        req: 1 }
+        ]);
+        if (!o) return;
+        if (+o.amount <= 0 || +o.months <= 0) return ui.toast('تحقق من المبلغ وعدد الأشهر');
+        await A.createRequest({ type: 'loan', empId: ME.id, amount: +o.amount, months: +o.months, reason: o.reason });
+        ui.toast('✅ تم رفع طلب السلفة');
+        requests();
+      }
+
+      else if (tab === 'overtime') {
+        const o = await ui.form('⏰ أوفر تايم', [
+          { n: 'date',  l: 'التاريخ',       t: 'date',   req: 1 },
+          { n: 'hours', l: 'عدد الساعات',   t: 'number', req: 1 },
+          { n: 'note',  l: 'السبب / التفاصيل', req: 1 }
+        ], { date: td });
+        if (!o) return;
+        if (+o.hours <= 0) return ui.toast('عدد الساعات لازم يكون أكبر من صفر');
+        await A.createRequest({ type: 'overtime', empId: ME.id, date: o.date, hours: +o.hours, note: o.note });
+        ui.toast('✅ تم رفع طلب الأوفر تايم');
+        requests();
+      }
+
+      else if (tab === 'change') {
+        const o = await ui.form('📝 تغيير بيانات', [
+          { n: 'field', l: 'الحقل', opts: [
+            ['phone','الهاتف'], ['bank','الحساب البنكي'],
+            ['email','الإيميل'], ['address','العنوان'], ['other','أخرى']
+          ], req: 1 },
+          { n: 'newValue', l: 'القيمة الجديدة', req: 1 },
+          { n: 'note',     l: 'ملاحظات' }
+        ]);
+        if (!o) return;
+        await A.createRequest({ type: 'change', empId: ME.id, field: o.field, newValue: o.newValue, note: o.note });
+        ui.toast('✅ تم رفع طلب تغيير البيانات');
+        requests();
+      }
+    };
+  }
+
   const TABS = () => [
-    ['home',   'الرئيسية', 'home'],
-    ['leaves', 'الإجازات', 'calendar'],
-    ['slips',  'القسايم',  'wallet'],
+    ['home',     'الرئيسية', 'home'],
+    ['leaves',   'الإجازات', 'calendar'],
+    ['requests', 'الطلبات',  'list'],
+    ['slips',    'القسايم',  'wallet'],
   ].concat(ME.isManager ? [['team', 'الفريق', 'users']] : [])
    .concat([['me', 'حسابي', 'user']]);
 
-  const PAGES = { home, leaves, slips, team, me };
+  const PAGES = { home, leaves, requests, slips, team, me };
 
   async function go() {
     const h = location.hash.slice(1), k = TABS().some(t => t[0] === h) ? h : 'home';

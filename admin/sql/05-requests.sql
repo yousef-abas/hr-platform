@@ -1,7 +1,7 @@
 -- جدول الطلبات (سلف · أوفر تايم · تغيير بيانات)
 CREATE TABLE IF NOT EXISTS requests (
-  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  emp_id      UUID REFERENCES employees(id) ON DELETE CASCADE,
+  id          TEXT DEFAULT gen_random_uuid()::text PRIMARY KEY,
+  emp_id      TEXT REFERENCES employees(id) ON DELETE CASCADE,
   type        TEXT NOT NULL CHECK (type IN ('loan','overtime','change')),
   status      TEXT NOT NULL DEFAULT 'معلقة',
 
