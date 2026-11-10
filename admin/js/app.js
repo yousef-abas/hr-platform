@@ -28,7 +28,6 @@
     { section: 'الإدارة' },
     { k: 'users', label: 'المستخدمون', icon: 'shield' },
     { k: 'audit',       label: 'سجل التدقيق',    icon: 'list' },
-    { k: 'ai-settings', label: '🤖 إعدادات AI',  icon: 'sparkle' },
   ];
   const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', employee: 'موظف' };
   const AVATAR_COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];

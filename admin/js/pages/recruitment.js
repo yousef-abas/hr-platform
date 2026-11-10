@@ -288,17 +288,7 @@ HR.pages.recruitment = {
       const job   = jobOf(c);
       const itvs  = itvOf(id);
       const sg    = stageOf(c);
-
-      /* ── CV Matching: AI أولاً، keyword fallback ── */
-      let match = null;
-      if (job && job.req) {
-        if (c.cvText) {
-          if (window.AIMatch && AIMatch.hasKey()) {
-            match = await AIMatch.matchAsync(c.cvText, job.req);
-          }
-          if (!match) match = matchCV(c.cvText, job.req); // keyword fallback
-        }
-      }
+      const match = job && job.req ? matchCV(c.cvText || '', job.req) : null;
 
 
       const html =
@@ -313,7 +303,7 @@ HR.pages.recruitment = {
           '</div>' +
 
           (match
-            ? (match.source === 'ai' && window.AIMatch ? AIMatch.renderResult(match) : matchHtml(match))
+            ? matchHtml(match)
             : job && job.req && !c.cvText
               ? '<section class="card cv-match" style="margin-bottom:12px;text-align:center">' +
                   '<p class="mu">📄 لم يُضف نص السيرة الذاتية بعد</p>' +
