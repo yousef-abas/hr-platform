@@ -4,11 +4,20 @@
 
 HR.org = {
 
-  isManager() { return HR.user.role === 'manager'; },
-  isHR()      { return HR.user.role === 'admin' || HR.user.role === 'hr'; },
+  isManager()    { return HR.user.role === 'manager'; },
+  isSupervisor() { return HR.user.role === 'supervisor'; },
+  isHR()         { return HR.user.role === 'admin' || HR.user.role === 'hr'; },
 
   async myTeam(allEmps) {
     if (this.isHR()) return allEmps;
+    const role = HR.user.role;
+    const dept = HR.user.managedDept;
+
+    /* مدير قسم أو مشرف — بيشوف موظفي قسمه */
+    if ((role === 'manager' || role === 'supervisor') && dept) {
+      return allEmps.filter(e => e.dept === dept && e.id !== HR.user.employeeId);
+    }
+    /* fallback: بيشوف اللي تحته مباشرة */
     const me = allEmps.find(e => e.id === HR.user.employeeId);
     if (!me) return [];
     return allEmps.filter(e => e.managerId === me.id && e.id !== me.id);

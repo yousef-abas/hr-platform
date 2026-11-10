@@ -7,23 +7,30 @@ HR.pages.requests = {
   icon:  'list',
 
   async render(root) {
-    const { store, ui } = HR, esc = ui.esc;
-
-    const [allEmps, allReqs] = await Promise.all([
-      store.list('employees'),
-      store.list('requests').catch(() => [])
-    ]);
 
     const empById  = id => allEmps.find(e => e.id === id) || { name: '—' };
     const tab      = HR.state.reqTab || 'loan';
+    const myRole   = HR.user.role;
+    const myDept   = HR.user.managedDept;
+
+    /* فلترة حسب الدور — HR/Admin يشوف الكل، مدير/مشرف يشوف قسمه بس */
+    const visibleEmps = (myRole === 'manager' || myRole === 'supervisor') && myDept
+      ? allEmps.filter(e => e.dept === myDept)
+      : allEmps;
+    const visibleIds  = new Set(visibleEmps.map(e => e.id));
+
+
+    /* فلتر الطلبات للأدوار المقيدة */
+    const myReqs = allReqs.filter(r => visibleIds.has(r.empId));
 
     const tabs = [
-      { k: 'loan',     label: '💰 سلف',           count: allReqs.filter(r => r.type === 'loan'     && r.status === 'معلقة').length },
-      { k: 'overtime', label: '⏰ عمل إضافي',      count: allReqs.filter(r => r.type === 'overtime' && r.status === 'معلقة').length },
-      { k: 'change',   label: '📝 تغيير بيانات',   count: allReqs.filter(r => r.type === 'change'   && r.status === 'معلقة').length },
+      { k: 'loan',     label: '💰 سلف',           count: myReqs.filter(r => r.type === 'loan'     && r.status === 'معلقة').length },
+      { k: 'overtime', label: '⏰ عمل إضافي',      count: myReqs.filter(r => r.type === 'overtime' && r.status === 'معلقة').length },
+      { k: 'change',   label: '📝 تغيير بيانات',   count: myReqs.filter(r => r.type === 'change'   && r.status === 'معلقة').length },
     ];
 
-    const rows = allReqs.filter(r => r.type === tab).sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1);
+    const rows = myReqs.filter(r => r.type === tab).sort((a, b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1);
+
 
     const statusTag = s => ui.tag(s, { 'معلقة': 'wa', 'موافق عليها': 'ok', 'مرفوضة': 'da', 'مكتملة': 'mu' }[s] || 'mu');
 

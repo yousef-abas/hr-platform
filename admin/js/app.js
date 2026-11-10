@@ -17,19 +17,24 @@
   ];
   const NAV_MANAGER = [
     { section: 'الرئيسية' },
-    { k: 'manager',  label: 'فريقي',    icon: 'users' },
-    { k: 'leaves',   label: 'الإجازات', icon: 'calendar' },
+    { k: 'manager',    label: 'فريقي',      icon: 'users' },
+    { k: 'leaves',     label: 'الإجازات',   icon: 'calendar' },
+  ];
+  const NAV_SUPERVISOR = [
+    { section: 'الرئيسية' },
+    { k: 'manager',    label: 'فريقي',      icon: 'users' },
+    { k: 'leaves',     label: 'الإجازات',   icon: 'calendar' },
   ];
   const NAV_EMPLOYEE = [
     { section: 'بوابتي' },
-    { k: 'employee', label: 'بوابتي',   icon: 'users' },
+    { k: 'employee',   label: 'بوابتي',     icon: 'users' },
   ];
   const ADMIN_EXTRA = [
     { section: 'الإدارة' },
-    { k: 'users', label: 'المستخدمون', icon: 'shield' },
-    { k: 'audit',       label: 'سجل التدقيق',    icon: 'list' },
+    { k: 'users',      label: 'المستخدمون', icon: 'shield' },
+    { k: 'audit',      label: 'سجل التدقيق', icon: 'list' },
   ];
-  const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', employee: 'موظف' };
+  const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', supervisor: 'مشرف', employee: 'موظف' };
   const AVATAR_COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];
 
   window.addEventListener('unhandledrejection', e => {
@@ -180,11 +185,13 @@
     const role = H.user.role;
     const allNav = role === 'employee'
       ? NAV_EMPLOYEE
-      : role === 'manager'
-        ? NAV_MANAGER
-        : role === 'admin'
-          ? [...NAV_HR, ...ADMIN_EXTRA]
-          : NAV_HR; // hr
+      : role === 'supervisor'
+        ? NAV_SUPERVISOR
+        : role === 'manager'
+          ? NAV_MANAGER
+          : role === 'admin'
+            ? [...NAV_HR, ...ADMIN_EXTRA]
+            : NAV_HR; // hr
     const keys   = allNav.filter(n => n.k).map(n => n.k);
     const nav    = document.getElementById('nav');
     const root   = document.getElementById('root');

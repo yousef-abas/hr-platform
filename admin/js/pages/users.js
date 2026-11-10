@@ -3,20 +3,35 @@ HR.pages.users = {
   async render(root) {
     const { store, ui } = HR;
 
-    /* تحميل البيانات */
     const [U, E] = await Promise.all([store.list('profiles'), store.list('employees')]);
 
     /* الأقسام من الموظفين */
     const depts = [...new Set(E.map(e => e.dept).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ar'));
 
     const R = [
-      ['admin',    'مدير النظام'],
-      ['hr',       'موارد بشرية'],
-      ['manager',  'مدير قسم'],
-      ['employee', 'موظف'],
+      ['admin',      'مدير النظام'],
+      ['hr',         'موارد بشرية'],
+      ['manager',    'مدير قسم'],
+      ['supervisor', 'مشرف'],
+      ['employee',   'موظف'],
     ];
-    const roleColor = { admin: '#dc2626', hr: '#2563eb', manager: '#8b5cf6', employee: '#16a34a' };
-    const roleIcon  = { admin: 'shield',  hr: 'users',  manager: 'org',      employee: 'user' };
+    const roleColor = {
+      admin:      '#dc2626',
+      hr:         '#2563eb',
+      manager:    '#8b5cf6',
+      supervisor: '#f59e0b',
+      employee:   '#16a34a',
+    };
+    const roleIcon = {
+      admin:      'shield',
+      hr:         'users',
+      manager:    'org',
+      supervisor: 'star',
+      employee:   'user',
+    };
+
+    /* الأدوار التي تحتاج تحديد قسم */
+    const NEEDS_DEPT = ['manager', 'supervisor'];
 
     root.innerHTML =
       ui.head('المستخدمون والصلاحيات', 'حدد دور كل حساب وأربطه بالموظف',
@@ -34,21 +49,26 @@ HR.pages.users = {
         ).join('') +
       '</div>' +
 
-      /* Users list */
+      /* جدول الصلاحيات */
       '<div class="card">' +
         '<h3>الحسابات (' + U.length + ')</h3>' +
         '<div class="user-list">' +
           U.map(u => {
-            const isManager = u.role === 'manager';
+            const needsDept = NEEDS_DEPT.includes(u.role);
             return (
               '<div class="user-row" data-id="' + u.id + '">' +
+
+                /* أفاتار */
                 '<div class="user-avatar" style="background:' + (roleColor[u.role] || '#6b7280') + '20;color:' + (roleColor[u.role] || '#6b7280') + '">' +
                   (u.fullName || u.email || '؟').trim()[0].toUpperCase() +
                 '</div>' +
+
+                /* اسم + إيميل */
                 '<div class="user-info">' +
                   '<b>' + ui.esc(u.fullName || u.email || '—') + '</b>' +
-                  '<small>' + ui.esc(u.email || '') + '</small>' +
+                  '<small>' + ui.esc(u.email || '') + (u.managedDept ? ' · <span style="color:#8b5cf6">📂 ' + ui.esc(u.managedDept) + '</span>' : '') + '</small>' +
                 '</div>' +
+
                 '<div class="user-ctrl">' +
 
                   /* الدور */
@@ -58,9 +78,9 @@ HR.pages.users = {
                     ).join('') +
                   '</select>' +
 
-                  /* القسم — يظهر فقط لو المستخدم مدير قسم */
-                  '<select data-f="managedDept" class="sel-sm dept-sel" style="' + (isManager ? '' : 'display:none') + '" title="القسم المسؤول عنه">' +
-                    '<option value="">— اختر القسم —</option>' +
+                  /* القسم — يظهر للمدير والمشرف فقط */
+                  '<select data-f="managedDept" class="sel-sm dept-sel" style="' + (needsDept ? '' : 'display:none') + '" title="القسم المسؤول عنه">' +
+                    '<option value="">— القسم —</option>' +
                     depts.map(d =>
                       '<option value="' + ui.esc(d) + '"' + (u.managedDept === d ? ' selected' : '') + '>' + ui.esc(d) + '</option>'
                     ).join('') +
@@ -86,17 +106,32 @@ HR.pages.users = {
         '</div>' +
       '</div>' +
 
-      /* How to add */
+      /* شرح الصلاحيات */
+      '<div class="card">' +
+        '<h3>🔐 شرح الصلاحيات</h3>' +
+        '<div style="display:grid;gap:10px;margin-top:4px">' +
+          [
+            ['#dc2626', 'مدير النظام', 'وصول كامل لكل شيء — الرواتب، الموظفين، الإعدادات، المستخدمين'],
+            ['#2563eb', 'موارد بشرية', 'نفس المدير ماعدا إدارة المستخدمين والإعدادات الحساسة'],
+            ['#8b5cf6', 'مدير قسم',    'يرى فريقه فقط — يوافق على الإجازات والطلبات — يرى تقاريرهم'],
+            ['#f59e0b', 'مشرف',        'يرى فريقه — يتابع الحضور والطلبات — بدون موافقة نهائية'],
+            ['#16a34a', 'موظف',        'بوابته الشخصية فقط — طلباته وإجازاته وراتبه'],
+          ].map(([c, l, d]) =>
+            '<div style="display:flex;gap:12px;align-items:flex-start">' +
+              '<span style="min-width:10px;height:10px;border-radius:50%;background:' + c + ';margin-top:5px;display:block"></span>' +
+              '<div><b>' + l + '</b><br><span class="mu" style="font-size:13px">' + d + '</span></div>' +
+            '</div>'
+          ).join('') +
+        '</div>' +
+      '</div>' +
+
+      /* كيف تضيف مستخدم */
       '<div class="card">' +
         '<h3>➕ إضافة مستخدم جديد</h3>' +
         '<div class="steps">' +
           '<div class="step"><span class="step-n">1</span><p>افتح Supabase ← <b>Authentication ← Users ← Add user</b></p></div>' +
           '<div class="step"><span class="step-n">2</span><p>أضف الإيميل والباسورد وفعّل <b>Auto Confirm User</b></p></div>' +
-          '<div class="step"><span class="step-n">3</span><p>ارجع هنا واضغط <b>تحديث</b>، ثم حدد الدور وربطه بالموظف</p></div>' +
-        '</div>' +
-        '<div class="al wa" style="margin-top:12px">' +
-          '<span>!</span>' +
-          '<div>لو عيّنت مستخدم دور <b>مدير قسم</b>، حدد القسم المسؤول عنه من الـ dropdown — سيرى فقط موظفي هذا القسم ويوافق على طلباتهم.</div>' +
+          '<div class="step"><span class="step-n">3</span><p>ارجع هنا واضغط <b>تحديث</b>، ثم حدد الدور والقسم والموظف المرتبط</p></div>' +
         '</div>' +
       '</div>';
 
@@ -117,9 +152,9 @@ HR.pages.users = {
       /* إظهار / إخفاء خانة القسم */
       if (t.dataset.f === 'role') {
         const deptSel = row.querySelector('.dept-sel');
-        if (deptSel) deptSel.style.display = t.value === 'manager' ? '' : 'none';
-        /* لو بيغير من مدير → مسح القسم */
-        if (t.value !== 'manager') {
+        const needsDept = NEEDS_DEPT.includes(t.value);
+        if (deptSel) deptSel.style.display = needsDept ? '' : 'none';
+        if (!needsDept) {
           await store.update('profiles', id, { role: t.value, managedDept: null });
           ui.toast('✅ تم الحفظ');
           return;
