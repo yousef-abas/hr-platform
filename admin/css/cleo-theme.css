@@ -509,3 +509,26 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+
+
+/* ── Splash typewriter ── */
+.lg em, #splash-type {
+  display: block;
+  font-style: normal;
+  color: #94a3b8;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 10px;
+  min-height: 20px;
+}
+#splash-type::after {
+  content: '|';
+  color: #c9933a;
+  animation: blink .7s step-end infinite;
+  margin-right: 1px;
+}
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50%     { opacity:0; }
+}

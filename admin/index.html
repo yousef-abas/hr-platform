@@ -18,32 +18,35 @@
 <!-- Splash -->
 <div id="splash">
   <div class="lg">
-    <b>
-      <i>
-        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
-          <circle cx="24" cy="16" r="7" stroke="#fff" stroke-width="2.5" fill="none"/>
-          <line x1="24" y1="23" x2="24" y2="42" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="14" y1="30" x2="34" y2="30" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>
-      </i>
-      CLEO HR
-    </b>
-    <span id="splash-type"></span>
+    <div class="lg-icon">
+      <svg viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="45" cy="45" rx="38" ry="38" stroke="#c9933a" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.4"/>
+        <ellipse cx="45" cy="45" rx="28" ry="28" stroke="#c9933a" stroke-width="1" opacity="0.3"/>
+        <circle cx="45" cy="32" r="9" stroke="#f5d78e" stroke-width="2.5" fill="none"/>
+        <line x1="45" y1="41" x2="45" y2="68" stroke="#f5d78e" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="34" y1="52" x2="56" y2="52" stroke="#f5d78e" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="45" cy="10" r="2.5" fill="#c9933a" opacity="0.8"/>
+        <circle cx="45" cy="80" r="2.5" fill="#c9933a" opacity="0.8"/>
+        <circle cx="10" cy="45" r="2.5" fill="#c9933a" opacity="0.8"/>
+        <circle cx="80" cy="45" r="2.5" fill="#c9933a" opacity="0.8"/>
+      </svg>
+    </div>
+    <b>CLEO <span>HR</span></b>
+    <em id="splash-type"></em>
   </div>
 </div>
 <script>
 (function(){
-  const txt = 'Human Resources Management';
-  const el  = document.getElementById('splash-type');
-  let i = 0;
+  var txt = 'Human Resources Management';
+  var el  = document.getElementById('splash-type');
+  var i   = 0;
   setTimeout(function type(){
     if(!el) return;
     el.textContent = txt.slice(0, i++);
-    if(i <= txt.length) setTimeout(type, 60);
-  }, 600);
+    if(i <= txt.length) setTimeout(type, 65);
+  }, 700);
 })();
 </script>
-
 
 <!-- App Shell -->
 <div id="shell">
