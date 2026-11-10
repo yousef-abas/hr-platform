@@ -129,12 +129,11 @@ a { color: inherit; text-decoration: none; }
 .ankh-svg {
   width: 90px; height: 108px;
   display: block; margin: 0 auto 20px;
-  filter: drop-shadow(0 0 18px #e8b87a55);
   animation: ankh-glow 2.5s ease-in-out 1.2s infinite alternate;
 }
 @keyframes ankh-glow {
-  from { filter: drop-shadow(0 0 10px #e8b87a33); }
-  to   { filter: drop-shadow(0 0 28px #e8b87a88); }
+  from { filter: drop-shadow(0 0 6px #e8b87a44); }
+  to   { filter: drop-shadow(0 0 22px #e8b87a99); }
 }
 
 /* الاسم */
