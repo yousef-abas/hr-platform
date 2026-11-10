@@ -323,3 +323,72 @@ label input, label select, label textarea { margin-top: 6px; }
 ::-webkit-scrollbar-thumb { background: var(--ln); border-radius: 2px; }
 
 @keyframes scaleIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:none; } }
+
+
+/* ══════════════════════════════════════════════
+   CLEO OVERRIDES — fix app.css blue elements
+   ══════════════════════════════════════════════ */
+
+/* Hero card — replace blue with dark gold */
+.hero {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 60%, #2a1f0e 100%) !important;
+  box-shadow: 0 8px 32px #00000025 !important;
+}
+.hero::before {
+  background:
+    radial-gradient(circle at 90% 10%, #c9933a12 0%, transparent 50%),
+    radial-gradient(circle at 10% 100%, #c9933a08 0%, transparent 50%) !important;
+}
+.hero::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #c9933a, #f5d78e, #c9933a, transparent);
+}
+.hero small  { color: #9ca3af !important; opacity: 1 !important; }
+.hero h1     { color: #f5d78e !important; }
+.hero p      { color: #9ca3af !important; opacity: 1 !important; }
+.hero-badge  {
+  background: #c9933a18 !important;
+  border: 1px solid #c9933a30 !important;
+  backdrop-filter: none !important;
+  color: #c9933a !important;
+}
+.clk {
+  color: #f5d78e !important;
+  background: #c9933a15 !important;
+  border: 1px solid #c9933a20 !important;
+  text-shadow: none !important;
+}
+
+/* Punch button — replace blue/red with gold/red */
+.pbtn.go {
+  background: linear-gradient(135deg, #c9933a, #a87328) !important;
+  box-shadow: 0 4px 20px #c9933a40 !important;
+}
+.pbtn.go::after   { color: #f5d78e !important; }
+.pbtn.stop {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  box-shadow: 0 4px 20px #dc262640 !important;
+}
+
+/* Bottom nav — was showing with blue active */
+#nav { background: var(--sf) !important; border-top: 1px solid var(--ln) !important; }
+.nav-item.on { color: var(--ac) !important; }
+.nav-item.on::after { background: var(--ac) !important; }
+
+/* Auth brand — replace blue icon */
+.brand i {
+  background: linear-gradient(135deg, var(--ac), var(--ach)) !important;
+  box-shadow: 0 4px 12px #c9933a30 !important;
+}
+
+/* Stat cards — keep white bg */
+.card.stat { background: var(--sf) !important; border: 1px solid var(--ln) !important; }
+
+/* Links active state */
+a.card.stat.lnk:hover { border-color: var(--ac) !important; }
+
+/* Progress / balance bar */
+.bar-fill { background: var(--ac) !important; }
+.bar-fill.ok { background: var(--ok) !important; }
+.bar-fill.da { background: var(--da) !important; }
