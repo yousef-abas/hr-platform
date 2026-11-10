@@ -493,14 +493,14 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
 /* ── Typewriter cursor ── */
 #splash-type {
   display: inline-block;
-  color: #c9933a;
+  color: #e8b87a;
   font-size: 16px;
   letter-spacing: .5px;
   min-height: 24px;
 }
 #splash-type::after {
   content: '|';
-  color: #c9933a;
+  color: #e8b87a;
   font-weight: 300;
   animation: blink .7s step-end infinite;
   margin-right: 2px;
@@ -515,7 +515,7 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
 .lg em, #splash-type {
   display: block;
   font-style: normal;
-  color: #c9933a;
+  color: #e8b87a;
   font-size: 13px;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -524,7 +524,7 @@ hr { border: 0; border-top: 1px solid var(--ln); margin: 20px 0; }
 }
 #splash-type::after {
   content: '|';
-  color: #c9933a;
+  color: #e8b87a;
   animation: blink .7s step-end infinite;
   margin-right: 1px;
 }
