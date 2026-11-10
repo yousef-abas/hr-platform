@@ -103,7 +103,9 @@
           ? '<select name="' + f.n + '">' +
               f.opts.map(o => { const a = Array.isArray(o) ? o : [o, o]; return '<option value="' + esc(a[0]) + '"' + (String(vals[f.n] == null ? '' : vals[f.n]) === String(a[0]) ? ' selected' : '') + '>' + esc(a[1]) + '</option>'; }).join('') +
             '</select>'
-          : '<input name="' + f.n + '" type="' + (f.t || 'text') + '" value="' + esc(vals[f.n] == null ? '' : vals[f.n]) + '"' + (f.req ? ' required' : '') + '>') +
+        : f.t === 'textarea'
+        ? '<textarea name="' + f.n + '" rows="6" style="width:100%;resize:vertical;font:inherit;padding:8px;border:1px solid var(--ln,#e2e6ec);border-radius:8px;background:var(--sf,#fff);color:var(--tx,#1a2332)"' + (f.req ? ' required' : '') + '>' + esc(vals[f.n] == null ? '' : vals[f.n]) + '</textarea>'
+        : '<input name="' + f.n + '" type="' + (f.t || 'text') + '" value="' + esc(vals[f.n] == null ? '' : vals[f.n]) + '"' + (f.req ? ' required' : '') + '>') +
         '</label>').join('') +
         '<div class="acts"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" data-x>إلغاء</button></div></form>';
       const m = modal(title, html);
