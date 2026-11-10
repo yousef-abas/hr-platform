@@ -76,7 +76,7 @@ HR.pages.profile = {
     if (late >= 3) al.push(['wa', 'تأخر ' + late + ' مرات هذا الشهر']);
 
     /* فريق هذا الموظف لو كان مديراً */
-    const myTeam = E.filter(x => x.managerId === e.id && x.status !== 'terminated');
+    const myTeam = E.filter(x => x.managerId === e.id && x.id !== e.id && x.status !== 'terminated');
     const isManager = myTeam.length > 0;
 
     const tabs = [
@@ -104,11 +104,11 @@ HR.pages.profile = {
       py: () => { const my = LINES.map(l => ({ run: RUNS.find(r => r.id === l.runId), c: (l.data || {}).calc })).filter(x => x.run && x.c).sort((x, y) => y.run.month < x.run.month ? -1 : 1); return '<div class="card"><h3>الراتب الحالي</h3>' + kv([['الأساسي', ui.money(e.salary)], ['البدلات', ui.money(e.allow)], ['مشمول بالتأمينات', e.insured === false ? 'لا' : 'نعم']]) + '<p style="color:var(--mu);font-size:13px">الحساب التفصيلي وقواعده في صفحة <a href="#payroll" style="color:var(--ac)">الرواتب</a>.</p></div><div class="card tw"><h3>الأشهر المعتمدة</h3><table><tr><th>الشهر</th><th>الإجمالي</th><th>الخصومات</th><th>الصافي</th><th>الحالة</th></tr>' + my.map(x => '<tr><td>' + x.run.month + '</td><td>' + ui.money(x.c.gross) + '</td><td>' + ui.money(x.c.deductions) + '</td><td class="net">' + ui.money(x.c.net) + '</td><td>' + ui.tag(x.run.status === 'paid' ? 'مصروف' : 'معتمد', 'ok') + '</td></tr>').join('') + '</table>' + (my.length ? '' : '<div class="em">لا توجد أشهر معتمدة بعد</div>') + '</div>'; },
       pf: () => '<div class="card"><h3>متوسط التقييم</h3>' + (R.length ? '<b style="font-size:28px">' + avg.toFixed(1) + '</b> ' + ui.stars(avg) + ' <span style="color:var(--mu)">(' + R.length + ' تقييم)</span>' : '<div class="em">لا توجد تقييمات. أضف من صفحة <a href="#performance" style="color:var(--ac)">تقييم الأداء</a>.</div>') + '</div>' + (R.length ? '<div class="card tw"><table><tr><th>الفترة</th><th>الجودة</th><th>التعاون</th><th>الالتزام</th><th>المبادرة</th><th>المتوسط</th><th>ملاحظات</th></tr>' + R.map(r => '<tr><td>' + r.period + '</td><td>' + r.q + '</td><td>' + r.t + '</td><td>' + r.p + '</td><td>' + r.i + '</td><td><b>' + r.avg.toFixed(1) + '</b></td><td>' + esc(r.note || '') + '</td></tr>').join('') + '</table></div>' : ''),
       tm: () => {
-        const mgr = E.find(x => x.id === e.managerId);
+        const mgr = E.find(x => x.id === e.managerId && x.id !== e.id);
         return '<div class="card">' +
           '<div class="ph" style="margin-bottom:16px">' +
             '<h3 style="margin:0">👥 الفريق المباشر (' + myTeam.length + ' موظف)</h3>' +
-            (mgr ? '<span style="font-size:13px;color:var(--mu)">المدير: <b>' + esc(mgr.name) + '</b></span>' : '') +
+            (mgr ? '<span style="font-size:13px;color:var(--mu)">يتبع لـ: <b>' + esc(mgr.name) + '</b></span>' : '') +
           '</div>' +
           '<div class="emp-grid">' +
             myTeam.map(m => {
