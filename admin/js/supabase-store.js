@@ -22,7 +22,7 @@
     reviews: 'id emp_id period q t p i avg note',
     documents: 'id emp_id type received expiry note file fname',
     timeline: 'id emp_id date type text',
-    profiles: 'id email full_name role employee_id',
+    profiles: 'id email full_name role employee_id managed_dept',
     settings: 'id key value',
     runs: 'id month status total_net total_cost emp_count rules_snapshot state_snapshot approved_at approved_by reopen_reason',
     lines: 'id run_id emp_id net data',
@@ -130,11 +130,12 @@
       fail(error);
       if (!data) throw new Error('الحساب موجود لكن ملفه الشخصي غير مُنشأ. شغّل سكربت الجداول وسكربت إنشاء الملفات الناقصة');
       H.user = {
-        id:         u.id,
-        email:      u.email,
-        name:       data.full_name || u.email,
-        role:       data.role,
-        employeeId: data.employee_id || null
+        id:          u.id,
+        email:       u.email,
+        name:        data.full_name || u.email,
+        role:        data.role,
+        employeeId:  data.employee_id  || null,
+        managedDept: data.managed_dept || null,
       };
     },
     async login(email, pw) {
