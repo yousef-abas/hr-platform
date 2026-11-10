@@ -374,3 +374,38 @@ label input, label select, label textarea { margin-top: 6px; }
   font-weight: 800; font-size: 14px; color: #07060300;
   flex-shrink: 0; box-shadow: 0 0 0 2px #c9933a30;
 }
+
+
+/* ── Override app.css brand/auth to Cleo style ── */
+.brand {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.brand i {
+  width: 44px; height: 44px; border-radius: 13px;
+  background: linear-gradient(135deg, #c9933a, #a87328);
+  color: #07060300; display: grid; place-items: center;
+  font-style: normal; font-weight: 900; font-size: 16px;
+  box-shadow: 0 4px 16px #c9933a50;
+}
+.brand b {
+  font-family: 'Cinzel', serif;
+  font-size: 17px; font-weight: 900;
+  background: linear-gradient(135deg, #f5d78e, #c9933a);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth {
+  max-width: 400px; margin: 10vh auto 0;
+  background: #110e08 !important;
+  border: 1px solid #c9933a25 !important;
+  box-shadow: 0 8px 40px #00000090 !important;
+}
+.auth h2 { color: #f5d78e; }
+.lm { color: #9e8a6a; }
+.lm.err { color: #c0392b; }
+
+.btn.block {
+  display: flex; width: 100%; justify-content: center;
+  padding: 14px; margin-bottom: 12px;
+}

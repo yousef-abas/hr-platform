@@ -236,7 +236,8 @@
 
     /* ── Theme btn ── */
     renderThemeBtn();
-    document.getElementById('theme-btn').onclick = toggleTheme;
+    const themeBtn = document.getElementById('theme-btn');
+    if (themeBtn) themeBtn.onclick = toggleTheme;
 
     /* ── Burger menu (mobile) ── */
     const top = document.getElementById('top');
