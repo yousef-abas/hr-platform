@@ -129,7 +129,13 @@
       const { data, error } = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
       fail(error);
       if (!data) throw new Error('الحساب موجود لكن ملفه الشخصي غير مُنشأ. شغّل سكربت الجداول وسكربت إنشاء الملفات الناقصة');
-      H.user = { id: u.id, email: u.email, name: data.full_name || u.email, role: data.role };
+      H.user = {
+        id:         u.id,
+        email:      u.email,
+        name:       data.full_name || u.email,
+        role:       data.role,
+        employeeId: data.employee_id || null
+      };
     },
     async login(email, pw) {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });

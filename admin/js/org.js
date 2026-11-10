@@ -1,80 +1,64 @@
 /* ─────────────────────────────────────────────────────────────────────
-   org.js — الهيكل التنظيمي + صلاحيات المدير
+   org.js — الهيكل التنظيمي + Dashboard المدير
    ───────────────────────────────────────────────────────────────────── */
 
 HR.org = {
 
-  /* ── هل المستخدم الحالي مدير؟ ── */
   isManager() { return HR.user.role === 'manager'; },
   isHR()      { return HR.user.role === 'admin' || HR.user.role === 'hr'; },
 
-  /* ── موظفو المدير الحالي ── */
   async myTeam(allEmps) {
-    if (this.isHR()) return allEmps; // HR يشوف الكل
+    if (this.isHR()) return allEmps;
     const me = allEmps.find(e => e.id === HR.user.employeeId);
     if (!me) return [];
-    return allEmps.filter(e => e.managerId === me.id);
+    return allEmps.filter(e => e.managerId === me.id && e.id !== me.id);
   },
 
-  /* ── إجازات الفريق المعلقة عند المدير ── */
-  teamPendingLeaves(leaves, teamIds) {
-    return leaves.filter(l =>
-      teamIds.includes(l.empId) &&
-      l.status === 'معلقة'
-    );
-  },
-
-  /* ── شجرة الهيكل التنظيمي ── */
   buildTree(emps) {
-    const roots = emps.filter(e => !e.managerId || !emps.find(x => x.id === e.managerId));
-    const children = id => emps.filter(e => e.managerId === id);
+    const active = emps.filter(e => e.status !== 'terminated');
+    const roots  = active.filter(e => !e.managerId || !active.find(x => x.id === e.managerId));
+    const children = id => active.filter(e => e.managerId === id);
     const node = e => ({ emp: e, children: children(e.id).map(node) });
     return roots.map(node);
   },
 
-  /* ── عرض شجرة الهيكل التنظيمي ── */
   renderTree(emps) {
-    const ui = HR.ui;
-    const tree = this.buildTree(emps.filter(e => e.status !== 'terminated'));
+    const ui   = HR.ui;
+    const tree = this.buildTree(emps);
+    const COLORS = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'];
 
     const nodeHtml = (n, depth) => {
-      const e = n.emp;
-      const hasChildren = n.children.length > 0;
-      const col = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'][depth % 5];
-      return `
-        <div class="org-node" style="--depth:${depth};--col:${col}">
-          <div class="org-card" data-id="${ui.esc(e.id)}">
-            ${e.photo
-              ? `<img class="av lazy-photo" data-photo="${ui.esc(e.photo)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">`
-              : `<span class="org-av" style="background:${col}">${(e.name||'?').trim()[0]}</span>`
-            }
-            <div class="org-info">
-              <b>${ui.esc(e.name)}</b>
-              <small>${ui.esc(e.title||'')}${e.dept ? ' · ' + ui.esc(e.dept) : ''}</small>
-            </div>
-            ${hasChildren ? `<span class="org-count">${n.children.length}</span>` : ''}
-          </div>
-          ${hasChildren ? `<div class="org-children">${n.children.map(c => nodeHtml(c, depth+1)).join('')}</div>` : ''}
-        </div>`;
+      const e   = n.emp;
+      const col = COLORS[depth % COLORS.length];
+      return (
+        '<div class="org-node" style="--depth:' + depth + ';--col:' + col + '">' +
+          '<div class="org-card" data-id="' + ui.esc(e.id) + '">' +
+            (e.photo
+              ? '<img class="lazy-photo" data-photo="' + ui.esc(e.photo) + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover">'
+              : '<span class="org-av" style="background:' + col + '">' + (e.name||'?').trim()[0] + '</span>') +
+            '<div class="org-info">' +
+              '<b>' + ui.esc(e.name) + '</b>' +
+              '<small>' + ui.esc(e.title || '') + (e.dept ? ' · ' + ui.esc(e.dept) : '') + '</small>' +
+            '</div>' +
+            (n.children.length ? '<span class="org-count">' + n.children.length + '</span>' : '') +
+          '</div>' +
+          (n.children.length
+            ? '<div class="org-children">' + n.children.map(c => nodeHtml(c, depth + 1)).join('') + '</div>'
+            : '') +
+        '</div>'
+      );
     };
 
-    if (!tree.length) return '<div class="em" style="padding:32px;text-align:center">لا يوجد هيكل تنظيمي — عيّن مديرين للموظفين أولاً</div>';
+    if (!tree.length) return '<div class="em" style="padding:32px;text-align:center">لا يوجد هيكل تنظيمي — أضف مديرين للموظفين</div>';
     return '<div class="org-tree">' + tree.map(n => nodeHtml(n, 0)).join('') + '</div>';
   },
 
-  /* ── صفحة الهيكل التنظيمي ── */
   async showOrgChart() {
     const { store, ui } = HR;
     const E = await store.list('employees');
-    const m = ui.modal('🏢 الهيكل التنظيمي', `
-      <div style="overflow:auto;max-height:70vh">
-        ${this.renderTree(E)}
-      </div>
-    `);
-    // lazy photos
+    const m = ui.modal('🏢 الهيكل التنظيمي', '<div style="overflow:auto;max-height:70vh">' + this.renderTree(E) + '</div>');
     m.el.querySelectorAll('img.lazy-photo').forEach(async img => {
-      const ref = img.dataset.photo;
-      if (!ref) return;
+      const ref = img.dataset.photo; if (!ref) return;
       if (ref.startsWith('data:') || ref.startsWith('http')) { img.src = ref; return; }
       try { const url = HR.files.photoUrl ? await HR.files.photoUrl(ref) : ref; if (url) img.src = url; } catch(_) {}
     });
@@ -82,142 +66,229 @@ HR.org = {
 };
 
 /* ─────────────────────────────────────────────────────────────────────
-   صفحة الموافقة للمدير — يشوف طلبات فريقه
+   Dashboard المدير
    ───────────────────────────────────────────────────────────────────── */
 HR.pages.manager = {
   title: 'فريقي',
-  icon: 'users',
+  icon:  'users',
+
   async render(root) {
     const { store, ui } = HR, esc = ui.esc;
-    const [allEmps, allLeaves, rules, cfg] = await Promise.all([
+
+    const [allEmps, allLeaves, allAttend, rules, cfg] = await Promise.all([
       store.list('employees'),
       store.list('leaves'),
+      store.list('attendance'),
       HR.leaves.load(),
       HR.payroll.load()
     ]);
 
     const me = allEmps.find(e => e.id === HR.user.employeeId);
     if (!me) {
-      root.innerHTML = '<div class="card em">لم يتم ربط حسابك بموظف — تواصل مع HR</div>';
+      root.innerHTML =
+        '<div class="card" style="text-align:center;padding:32px">' +
+          '<div style="font-size:48px;margin-bottom:12px">🔗</div>' +
+          '<h3>لم يتم ربط حسابك بموظف</h3>' +
+          '<p style="color:var(--mu)">تواصل مع HR لربط حسابك بملفك الوظيفي</p>' +
+        '</div>';
       return;
     }
 
-    const team = allEmps.filter(e => e.managerId === me.id && e.status !== 'terminated');
+    const team    = allEmps.filter(e => e.managerId === me.id && e.id !== me.id && e.status !== 'terminated');
     const teamIds = team.map(e => e.id);
-    const teamLeaves = allLeaves.filter(l => teamIds.includes(l.empId));
-    const pending = teamLeaves.filter(l => l.status === 'معلقة');
+    const today   = ui.today();
 
-    const empName = id => (allEmps.find(e => e.id === id) || {}).name || '—';
-    const tcol = n => ((HR.leaves.type(rules, n) || {}).color) || '#5b738b';
+    /* إجازات الفريق */
+    const teamLeaves  = allLeaves.filter(l => teamIds.includes(l.empId));
+    const pending     = teamLeaves.filter(l => l.status === 'معلقة');
+    const onLeaveNow  = teamLeaves.filter(l => l.status === 'موافق عليها' && l.from <= today && l.to >= today);
 
+    /* حضور اليوم */
+    const todayAttend = allAttend.filter(a => teamIds.includes(a.empId) && a.date === today);
+    const presentIds  = [...new Set(todayAttend.map(a => a.empId))];
+    const absentTeam  = team.filter(e => !presentIds.includes(e.id) && !onLeaveNow.find(l => l.empId === e.id));
+
+    const empById = id => allEmps.find(e => e.id === id) || { name: '—' };
+    const leaveColor = name => ((HR.leaves.type(rules, name) || {}).color) || '#5b738b';
+    const statusClass = { 'موافق عليها': 'ok', 'مرفوضة': 'da', 'معلقة': 'wa', 'معلقة HR': 'wa' };
+
+    /* ── UI ── */
     root.innerHTML =
-      ui.head('فريقي', me.name + ' · ' + (me.dept || ''),
-        '<button class="btn ghost" data-a="org">🏢 الهيكل التنظيمي</button>'
-      ) +
+
+      /* Header */
+      '<div class="ph" style="margin-bottom:20px">' +
+        '<div>' +
+          '<h2 style="margin:0">👥 ' + esc(me.name) + '</h2>' +
+          '<p style="color:var(--mu);margin:4px 0 0">' + esc(me.title || '') + ' · ' + esc(me.dept || '') + '</p>' +
+        '</div>' +
+        '<button class="btn ghost" data-a="org">🏢 الهيكل التنظيمي</button>' +
+      '</div>' +
 
       /* KPIs */
       '<div class="kpi-row">' +
-        '<div class="kpi-card" style="--kc:#2563eb"><div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('users') + '</div><div class="kpi-val">' + team.length + '</div><div class="kpi-lbl">أعضاء الفريق</div></div>' +
-        '<div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-ic" style="background:#fffbeb;color:#d97706">' + ui.icon('clock') + '</div><div class="kpi-val">' + pending.length + '</div><div class="kpi-lbl">طلبات معلقة</div></div>' +
-        '<div class="kpi-card" style="--kc:#22c55e"><div class="kpi-ic" style="background:#f0fdf4;color:#16a34a">' + ui.icon('check') + '</div><div class="kpi-val">' + teamLeaves.filter(l=>l.status==='موافق عليها').length + '</div><div class="kpi-lbl">موافق عليها</div></div>' +
+        '<div class="kpi-card" style="--kc:#2563eb">' +
+          '<div class="kpi-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('users') + '</div>' +
+          '<div class="kpi-val">' + team.length + '</div>' +
+          '<div class="kpi-lbl">أعضاء الفريق</div>' +
+        '</div>' +
+        '<div class="kpi-card" style="--kc:#f59e0b">' +
+          '<div class="kpi-ic" style="background:#fffbeb;color:#d97706">' + ui.icon('clock') + '</div>' +
+          '<div class="kpi-val">' + pending.length + '</div>' +
+          '<div class="kpi-lbl">طلبات معلقة</div>' +
+        '</div>' +
+        '<div class="kpi-card" style="--kc:#22c55e">' +
+          '<div class="kpi-ic" style="background:#f0fdf4;color:#16a34a">' + ui.icon('check') + '</div>' +
+          '<div class="kpi-val">' + presentIds.length + '</div>' +
+          '<div class="kpi-lbl">حاضر اليوم</div>' +
+        '</div>' +
+        '<div class="kpi-card" style="--kc:#ef4444">' +
+          '<div class="kpi-ic" style="background:#fef2f2;color:#ef4444">' + ui.icon('x') + '</div>' +
+          '<div class="kpi-val">' + absentTeam.length + '</div>' +
+          '<div class="kpi-lbl">غياب اليوم</div>' +
+        '</div>' +
       '</div>' +
 
-      /* الطلبات المعلقة */
-      (pending.length ? `
-        <div class="card">
-          <h3 style="margin-bottom:14px">⏳ طلبات تحتاج موافقتك (${pending.length})</h3>
-          <div class="tw"><table>
-            <tr><th>الموظف</th><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>ملاحظات</th><th></th></tr>
-            ${pending.map(l => `
-              <tr data-id="${esc(l.id)}">
-                <td>${ui.who(allEmps.find(e=>e.id===l.empId)||{name:empName(l.empId)})}</td>
-                <td><span class="tag" style="background:${tcol(l.type)}22;color:${tcol(l.type)}">${esc(l.type)}</span></td>
-                <td>${l.from}</td><td>${l.to}</td>
-                <td><b>${l.days}</b></td>
-                <td style="font-size:12px;color:var(--mu)">${esc(l.note||'')}</td>
-                <td>
-                  <div style="display:flex;gap:6px">
-                    <button class="btn sm" data-a="mgr-ok">موافق</button>
-                    <button class="btn danger sm" data-a="mgr-no">رفض</button>
-                  </div>
-                </td>
-              </tr>`).join('')}
-          </table></div>
-        </div>` : '<div class="card" style="text-align:center;padding:24px;color:var(--mu)">✅ لا توجد طلبات معلقة</div>') +
+      /* طلبات معلقة */
+      '<div class="card">' +
+        '<div class="ph" style="margin-bottom:14px">' +
+          '<h3 style="margin:0">🕐 طلبات تحتاج موافقتك' + (pending.length ? ' <span class="badge-count">' + pending.length + '</span>' : '') + '</h3>' +
+        '</div>' +
+        (pending.length
+          ? '<div class="tw"><table>' +
+              '<tr><th>الموظف</th><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>ملاحظة</th><th></th></tr>' +
+              pending.map(l =>
+                '<tr data-id="' + esc(l.id) + '">' +
+                  '<td>' + ui.who(empById(l.empId)) + '</td>' +
+                  '<td><span class="tag" style="background:' + leaveColor(l.type) + '22;color:' + leaveColor(l.type) + '">' + esc(l.type) + '</span></td>' +
+                  '<td>' + l.from + '</td>' +
+                  '<td>' + l.to + '</td>' +
+                  '<td><b>' + l.days + '</b></td>' +
+                  '<td style="font-size:12px;color:var(--mu)">' + esc(l.note || '') + '</td>' +
+                  '<td>' +
+                    '<div style="display:flex;gap:6px">' +
+                      '<button class="btn sm" data-a="mgr-ok">✓ موافقة</button>' +
+                      '<button class="btn danger sm" data-a="mgr-no">✗ رفض</button>' +
+                    '</div>' +
+                  '</td>' +
+                '</tr>'
+              ).join('') +
+            '</table></div>'
+          : '<div class="em" style="padding:20px;text-align:center">✅ لا توجد طلبات معلقة</div>') +
+      '</div>' +
+
+      /* حضور + غياب اليوم */
+      '<div class="grid-2">' +
+        '<div class="card">' +
+          '<h3 style="margin-bottom:14px">✅ حاضرون اليوم (' + presentIds.length + ')</h3>' +
+          (presentIds.length
+            ? presentIds.map(id => {
+                const emp = empById(id);
+                const rec = todayAttend.filter(a => a.empId === id).sort((a,b) => a.time > b.time ? 1 : -1);
+                const inT = rec[0] && rec[0].type === 'in'  ? rec[0].time : '—';
+                return '<div class="att-row">' + ui.who(emp) + '<span style="color:var(--mu);font-size:12px">دخول: ' + inT + '</span></div>';
+              }).join('')
+            : '<div class="em">لا توجد سجلات حضور اليوم</div>') +
+        '</div>' +
+
+        '<div class="card">' +
+          '<h3 style="margin-bottom:14px">❌ غياب اليوم (' + absentTeam.length + ')</h3>' +
+          (absentTeam.length
+            ? absentTeam.map(emp =>
+                '<div class="att-row">' + ui.who(emp) + '</div>'
+              ).join('')
+            : '<div class="em">لا غياب 🎉</div>') +
+          (onLeaveNow.length
+            ? '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--br)">' +
+                '<b style="font-size:13px;color:var(--mu)">في إجازة اليوم:</b>' +
+                onLeaveNow.map(l =>
+                  '<div class="att-row">' + ui.who(empById(l.empId)) + '<span style="font-size:12px;color:var(--mu)">' + esc(l.type) + '</span></div>'
+                ).join('') +
+              '</div>'
+            : '') +
+        '</div>' +
+      '</div>' +
 
       /* أعضاء الفريق */
       '<div class="card">' +
         '<h3 style="margin-bottom:14px">👥 أعضاء الفريق</h3>' +
         '<div class="emp-grid">' +
-          team.map(e => `
-            <div class="emp-card" data-id="${esc(e.id)}">
-              <div class="emp-card-top">
-                <div class="emp-avatar">
-                  ${e.photo
-                    ? `<img data-photo="${esc(e.photo)}" class="lazy-photo" alt="">`
-                    : `<span>${(e.name||'?').trim()[0]}</span>`}
-                </div>
-                ${ui.tag('نشط','ok')}
-              </div>
-              <div class="emp-card-body">
-                <b class="emp-name">${esc(e.name)}</b>
-                <span class="emp-title">${esc(e.title||'')}</span>
-                <span class="emp-dept">${ui.icon('grid')}${esc(e.dept||'')}</span>
-              </div>
-              <div class="emp-card-foot">
-                <button class="btn sm" data-a="view">الملف</button>
-                <button class="btn ghost sm" data-a="leaves">إجازاته</button>
-              </div>
-            </div>`).join('') +
+          team.map(emp => {
+            const col = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706'][emp.name.length % 5];
+            const isPresent = presentIds.includes(emp.id);
+            const isLeave   = onLeaveNow.find(l => l.empId === emp.id);
+            const badge     = isLeave ? 'wa' : isPresent ? 'ok' : 'mu';
+            const badgeTxt  = isLeave ? 'إجازة' : isPresent ? 'حاضر' : 'غائب';
+            return (
+              '<div class="emp-card" data-id="' + esc(emp.id) + '">' +
+                '<div class="emp-card-top">' +
+                  '<div class="emp-avatar">' +
+                    (emp.photo
+                      ? '<img data-photo="' + esc(emp.photo) + '" class="lazy-photo" alt="">'
+                      : '<span style="background:' + col + '">' + (emp.name||'?').trim()[0] + '</span>') +
+                  '</div>' +
+                  ui.tag(badgeTxt, badge) +
+                '</div>' +
+                '<div class="emp-card-body">' +
+                  '<b class="emp-name">' + esc(emp.name) + '</b>' +
+                  '<span class="emp-title">' + esc(emp.title || '') + '</span>' +
+                  '<span class="emp-dept">' + ui.icon('grid') + esc(emp.dept || '') + '</span>' +
+                '</div>' +
+                '<div class="emp-card-foot">' +
+                  '<button class="btn sm" data-a="view">الملف</button>' +
+                  '<button class="btn ghost sm" data-a="leaves">الإجازات</button>' +
+                '</div>' +
+              '</div>'
+            );
+          }).join('') +
         '</div>' +
       '</div>';
 
-    /* Events */
-    root.onclick = async e => {
-      const btn = e.target.closest('[data-a]'); if (!btn) return;
-      const a = btn.dataset.a;
-      const rowId = btn.closest('[data-id]') && btn.closest('[data-id]').dataset.id;
+    /* ── Events ── */
+    root.onclick = async ev => {
+      const btn = ev.target.closest('[data-a]'); if (!btn) return;
+      const a   = btn.dataset.a;
+      const row = btn.closest('[data-id]');
+      const id  = row && row.dataset.id;
 
-      if (a === 'org') { HR.org.showOrgChart(); return; }
-
-      if (a === 'view') { location.hash = 'profile-' + rowId; return; }
+      if (a === 'org')    { HR.org.showOrgChart(); return; }
+      if (a === 'view')   { location.hash = 'profile-' + id; return; }
 
       if (a === 'leaves') {
-        const emp = allEmps.find(x => x.id === rowId);
-        const lv  = teamLeaves.filter(l => l.empId === rowId);
-        HR.ui.modal('إجازات ' + (emp||{}).name, `
-          <div class="tw"><table>
-            <tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th></tr>
-            ${lv.length
-              ? lv.map(l => `<tr>
-                  <td>${esc(l.type)}</td><td>${l.from}</td><td>${l.to}</td>
-                  <td>${l.days}</td>
-                  <td>${ui.tag(l.status, {موافق:'ok','موافق عليها':'ok',مرفوضة:'da',معلقة:'wa','معلقة HR':'wa'}[l.status])}</td>
-                </tr>`).join('')
-              : '<tr><td colspan="5" style="text-align:center;color:var(--mu)">لا توجد إجازات</td></tr>'}
-          </table></div>
-        `);
+        const emp = empById(id);
+        const lv  = teamLeaves.filter(l => l.empId === id);
+        HR.ui.modal('إجازات ' + emp.name,
+          '<div class="tw"><table>' +
+            '<tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th></tr>' +
+            (lv.length
+              ? lv.map(l =>
+                  '<tr><td>' + esc(l.type) + '</td><td>' + l.from + '</td><td>' + l.to + '</td>' +
+                  '<td>' + l.days + '</td><td>' + ui.tag(l.status, statusClass[l.status] || 'mu') + '</td></tr>'
+                ).join('')
+              : '<tr><td colspan="5" style="text-align:center;color:var(--mu)">لا توجد إجازات</td></tr>') +
+          '</table></div>'
+        );
         return;
       }
 
       if (a === 'mgr-ok') {
-        const lv = allLeaves.find(l => l.id === rowId);
-        const bal = HR.leaves.balance(allEmps.find(x=>x.id===lv.empId), lv.type, ui.today(), allLeaves, rules, cfg.rules);
+        const lv  = allLeaves.find(l => l.id === id);
+        const emp = allEmps.find(e => e.id === lv.empId);
+        const bal = HR.leaves.balance(emp, lv.type, today, allLeaves, rules, cfg.rules);
         if (!bal.unlimited && lv.days > bal.remaining) {
-          if (!confirm('الرصيد المتبقي أقل من الأيام المطلوبة. تأكيد؟')) return;
+          if (!confirm('الرصيد المتبقي (' + bal.remaining + ' يوم) أقل من الأيام المطلوبة (' + lv.days + '). تأكيد؟')) return;
         }
-        await store.update('leaves', rowId, {
+        await store.update('leaves', id, {
           mgrStatus: 'موافق', mgrBy: HR.user.email, mgrAt: new Date().toISOString(),
           status: 'معلقة HR'
         });
-        ui.toast('✅ تمت الموافقة — الطلب الآن عند HR');
+        ui.toast('✅ تمت الموافقة — الطلب في انتظار HR');
         HR.refresh();
       }
 
       if (a === 'mgr-no') {
         const reason = await ui.prompt('سبب الرفض (اختياري)');
         if (reason === null) return;
-        await store.update('leaves', rowId, {
+        await store.update('leaves', id, {
           mgrStatus: 'مرفوض', mgrBy: HR.user.email, mgrAt: new Date().toISOString(),
           status: 'مرفوضة', rejectReason: reason
         });

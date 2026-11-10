@@ -13,11 +13,16 @@
     { k: 'performance', label: 'الأداء',          icon: 'star' },
     { section: 'المالية' },
     { k: 'payroll',     label: 'الرواتب',         icon: 'wallet' },
+    { k: 'requests',    label: 'الطلبات',         icon: 'list' },
   ];
   const NAV_MANAGER = [
     { section: 'الرئيسية' },
-    { k: 'manager',   label: 'فريقي',            icon: 'users' },
-    { k: 'leaves',    label: 'الإجازات',          icon: 'calendar' },
+    { k: 'manager',  label: 'فريقي',    icon: 'users' },
+    { k: 'leaves',   label: 'الإجازات', icon: 'calendar' },
+  ];
+  const NAV_EMPLOYEE = [
+    { section: 'بوابتي' },
+    { k: 'employee', label: 'بوابتي',   icon: 'users' },
   ];
   const ADMIN_EXTRA = [
     { section: 'الإدارة' },
@@ -173,11 +178,13 @@
 
   function start() {
     const role = H.user.role;
-    const allNav = role === 'manager'
-      ? NAV_MANAGER
-      : (role === 'admin' || role === 'hr')
-        ? (role === 'admin' ? [...NAV_HR, ...ADMIN_EXTRA] : NAV_HR)
-        : NAV_HR; // employee — لوحة تحكم فقط (مرحلة لاحقة)
+    const allNav = role === 'employee'
+      ? NAV_EMPLOYEE
+      : role === 'manager'
+        ? NAV_MANAGER
+        : role === 'admin'
+          ? [...NAV_HR, ...ADMIN_EXTRA]
+          : NAV_HR; // hr
     const keys   = allNav.filter(n => n.k).map(n => n.k);
     const nav    = document.getElementById('nav');
     const root   = document.getElementById('root');
@@ -231,10 +238,13 @@
         '<button id="burger">' +
           ui.icon('menu') +
         '</button>' +
-        '<span id="top-title"></span>';
+        '<span id="top-title"></span>' +
+        '<span style="flex:1"></span>';
       document.getElementById('burger').onclick = () => {
         document.getElementById('sidebar').classList.toggle('open');
       };
+      /* زر الإشعارات */
+      if (HR.notifications) HR.notifications.init();
     }
 
     /* ── Badge الإجازات ── */
