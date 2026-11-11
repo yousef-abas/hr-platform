@@ -19,6 +19,19 @@ if (!x.includes('ACCESS_FINE_LOCATION') || !x.includes('allowBackup="false"')) t
 fs.writeFileSync(mf, x);
 console.log('AndroidManifest: صلاحيات الموقع اتضافت، والنسخ الاحتياطي اتقفل');
 
+/* ── استبدال أيقونة CLEO HR ── */
+const iconSrc = path.join(root, 'assets', 'app_icon_for_cleo_hr.png');
+if (fs.existsSync(iconSrc)) {
+  const iconBytes = fs.readFileSync(iconSrc);
+  ['icon-only.png', 'icon-foreground.png', 'splash.png', 'splash-dark.png'].forEach(name => {
+    const dest = path.join(root, 'assets', name);
+    fs.writeFileSync(dest, iconBytes);
+    console.log('✓ Icon replaced: ' + name);
+  });
+} else {
+  console.warn('تحذير: app_icon_for_cleo_hr.png مش موجودة');
+}
+
 /* الأيقونة وشاشة البداية — ألوان CLEO HR */
 try { run("npx capacitor-assets generate --android --assetPath assets --iconBackgroundColor '#1c0f05' --splashBackgroundColor '#1c0f05'"); }
 catch (e) { console.warn('تحذير: ما اتولّدتش الأيقونات، هيتستخدم الأيقونة الافتراضية'); }
