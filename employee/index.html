@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#c9933a">
+<meta name="theme-color" content="#1c0f05">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,9 +16,80 @@
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/cleo-emp.css">
 <link rel="stylesheet" href="css/additions-emp.css">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+/* ── Splash ── */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #1c0f05;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  transition: opacity .5s ease, visibility .5s ease;
+}
+#splash.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+#splash .lg {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  animation: splashIn .6s ease both;
+}
+@keyframes splashIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#splash .ankh-svg { width: 90px; height: 108px; filter: drop-shadow(0 0 18px #e8b87a55); }
+#splash .lg b {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem; font-weight: 900; letter-spacing: .08em;
+  color: #e8b87a;
+}
+#splash .lg b span { color: #c9933a; }
+#splash .lg em {
+  font-style: normal; font-family: 'Cairo', sans-serif;
+  font-size: .85rem; letter-spacing: .12em; color: #c9933a;
+  min-height: 1.2em; text-transform: uppercase;
+}
+/* صورة الموظف في دائرة */
+.avt img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+</style>
 </head>
 <body>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="lg">
+    <svg class="ankh-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="38" r="22" stroke="#e8b87a" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+      <circle cx="50" cy="30" r="14" stroke="#e8b87a" stroke-width="2.5" fill="none"/>
+      <line x1="50" y1="44" x2="50" y2="90" stroke="#e8b87a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="30" y1="62" x2="70" y2="62" stroke="#e8b87a" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="50" cy="6"   r="2" fill="#e8b87a" opacity="0.6"/>
+      <circle cx="50" cy="114" r="2" fill="#e8b87a" opacity="0.6"/>
+      <circle cx="8"  cy="62"  r="2" fill="#e8b87a" opacity="0.6"/>
+      <circle cx="92" cy="62"  r="2" fill="#e8b87a" opacity="0.6"/>
+    </svg>
+    <b>CLEO <span>HR</span></b>
+    <em id="splash-type"></em>
+  </div>
+</div>
+
+<script>
+(function(){
+  var txt = 'Human Resources Management';
+  var el  = document.getElementById('splash-type');
+  var i   = 0;
+  setTimeout(function type(){
+    if(!el) return;
+    el.textContent = txt.slice(0, i++);
+    if(i <= txt.length) setTimeout(type, 65);
+  }, 700);
+  setTimeout(function(){ document.getElementById('splash').classList.add('hide'); }, 3200);
+  setTimeout(function(){ var s = document.getElementById('splash'); if(s) s.remove(); }, 3800);
+})();
+</script>
+
 <div id="app"><main id="view"></main></div>
 <nav id="nav"></nav>
 <script src="../admin/vendor/supabase.js"></script>
