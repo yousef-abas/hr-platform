@@ -201,6 +201,8 @@
   async function home() {
     showSkeleton();
     const td = ui.today(), mo = td.slice(0, 7), rg = A.monthRange(mo);
+    let ann = [];
+    try { if (A.announcements) ann = await A.announcements(); } catch (_) { ann = []; }
     const [att, lv] = await Promise.all([A.attendance(ME.id, rg.from, rg.to), A.leaves(ME.id)]);
     const rec = att.find(a => a.date === td) || { in: '', out: '' }, present = att.filter(a => a.in).length;
     const mt = RULES.types.find(t => t.name === 'سنوية') || RULES.types.find(t => t.paid && t.quota > 0);
