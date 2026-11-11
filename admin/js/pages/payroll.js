@@ -306,36 +306,35 @@
           await Promise.all(rows.map(r => store.create('lines', { runId: rid, empId: r.id, data: { name: r.name, title: r.title, dept: r.dept, calc: r.calc } })));
           ui.toast('✅ تم الاعتماد وحفظ الأرقام');
           /* [E] إشعار كل موظف بالراتب */
-          notifyPayroll(rows, month);
+          HR.pages.payroll._notifyPayroll(rows, month);
           HR.refresh(); return;
         }
         if (run) await store.update('runs', run.id, data);
         else await store.create('runs', { month, ...data });
-        if (ns === 'paid') notifyPayroll(rows, month);
+        if (ns === 'paid') HR.pages.payroll._notifyPayroll(rows, month);
         ui.toast('تم تحديث حالة الشهر'); HR.refresh();
       }
     };
   }
 
-/* ── [E] إشعار الموظفين بالراتب ── */
-async function notifyPayroll(rows, month) {
-  if (!HR.notifications || !HR.notifications.push) return;
-  /* إرسال إشعار لكل موظف — silent fail */
-  const label = month.replace('-', '/');
-  for (const r of rows) {
-    try {
-      await HR.store.create('inbox', {
-        empId:   r.id,
-        type:    'payroll',
-        title:   'تم اعتماد راتب ' + label,
-        body:    'صافي الراتب: ' + HR.ui.money(r.calc.net),
-        url:     '#slips',
-        read:    false,
-        created: new Date().toISOString()
-      });
-    } catch (_) {}
-  }
-  HR.ui.toast('📨 تم إرسال إشعار الراتب لكل الموظفين');
-}
-};
 
+  /* ── [E] إشعار الموظفين بالراتب ── */
+  async _notifyPayroll(rows, month) {
+    const label = month.replace('-', '/');
+    for (const r of rows) {
+      try {
+        await HR.store.create('inbox', {
+          empId:   r.id,
+          type:    'payroll',
+          title:   'تم اعتماد راتب ' + label,
+          body:    'صافي الراتب: ' + HR.ui.money(r.calc.net),
+          url:     '#slips',
+          read:    false,
+          created: new Date().toISOString()
+        });
+      } catch (_) {}
+    }
+    HR.ui.toast('📨 تم إرسال إشعار الراتب لكل الموظفين');
+  },
+
+};
