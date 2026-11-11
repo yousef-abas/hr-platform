@@ -257,7 +257,7 @@ HR.pdf = {
         w.print();
       }, 600);
     };
-  }
+  },
 
   /* ── [K] ملف الموظف الكامل PDF ── */
   employeeProfile(emp, att, leaves, reviews, month) {
