@@ -1,0 +1,20 @@
+{
+  "name": "hr-employees-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "تطبيق الموظفين (أندرويد): غلاف Capacitor حول تطبيق الويب",
+  "scripts": {
+    "web": "node build-web.js",
+    "prepare:android": "node scripts/prepare.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/geolocation": "8.2.4",
+    "@capacitor/share": "8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3",
+    "@capacitor/assets": "3.0.5"
+  }
+}

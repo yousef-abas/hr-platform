@@ -1,17 +1,20 @@
 {
-  "name": "تطبيق الموظفين",
-  "short_name": "الموظفين",
-  "description": "الحضور والإجازات وقسايم الرواتب",
+  "name": "CLEO HR",
+  "short_name": "CLEO HR",
+  "description": "بوابة الموظف — نظام كليو للموارد البشرية",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "ar",
-  "background_color": "#f5f6f7",
-  "theme_color": "#0070f2",
+  "background_color": "#1c0f05",
+  "theme_color": "#c9933a",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
-  ]
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false
 }

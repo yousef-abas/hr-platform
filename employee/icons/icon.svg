@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#1c0f05"/>
+  <!-- Spotlight glow -->
+  <radialGradient id="glow" cx="50%" cy="40%" r="50%">
+    <stop offset="0%" stop-color="#c9933a" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="#1c0f05" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="512" height="512" rx="100" fill="url(#glow)"/>
+  <!-- Ankh -->
+  <circle cx="256" cy="176" r="72" stroke="#e8b87a" stroke-width="22" fill="none"/>
+  <line x1="256" y1="248" x2="256" y2="400" stroke="#e8b87a" stroke-width="22" stroke-linecap="round"/>
+  <line x1="176" y1="310" x2="336" y2="310" stroke="#e8b87a" stroke-width="22" stroke-linecap="round"/>
+  <!-- Corner dots -->
+  <circle cx="256" cy="60"  r="10" fill="#c9933a" opacity="0.7"/>
+  <circle cx="256" cy="452" r="10" fill="#c9933a" opacity="0.7"/>
+  <circle cx="60"  cy="256" r="10" fill="#c9933a" opacity="0.7"/>
+  <circle cx="452" cy="256" r="10" fill="#c9933a" opacity="0.7"/>
+</svg>
