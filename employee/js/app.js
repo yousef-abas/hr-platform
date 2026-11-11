@@ -3,7 +3,7 @@
   const view = document.getElementById('view'), nav = document.getElementById('nav');
   let CFG, ME, RULES, timer;
   const screen = html => { clearInterval(timer); nav.style.display = 'none'; view.innerHTML = html; window.scrollTo(0, 0); };
-  const brand = '<div class="brand"><i>HR</i><b>تطبيق الموظفين</b></div>';
+  const brand = '<div class="brand"><i>HR</i><b>CLEO HR</b></div>';
   const fatal = (title, msg, out) => screen('<div class="auth card">' + brand + '<h2>' + title + '</h2><p class="lm err">' + esc(msg) + '</p>' + (out ? '<button class="btn" id="lo">تسجيل الخروج</button>' : '<button class="btn" onclick="location.reload()">إعادة المحاولة</button>') + '</div>') || (out && (view.querySelector('#lo').onclick = () => H.mode === 'local' ? location.reload() : H.auth.logout()));
   const DOCS = { id: 'صورة البطاقة', birth: 'شهادة الميلاد', edu: 'المؤهل الدراسي', crim: 'الفيش الجنائي', mil: 'موقف التجنيد', contract: 'عقد العمل', med: 'الكشف الطبي', photo: 'صور شخصية' };
   const hm = () => new Date().toTimeString().slice(0, 5);
@@ -13,6 +13,21 @@
   /* ── Dark mode ── */
   const savedTheme = localStorage.getItem('hr-emp-theme') || 'light';
   if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+  /* ── Offline banner ── */
+  (function setupOffline() {
+    let bar = document.getElementById('offline-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'offline-bar';
+      bar.textContent = '⚠️ لا يوجد اتصال بالإنترنت — بعض الميزات قد لا تعمل';
+      document.body.prepend(bar);
+    }
+    const update = () => bar.classList.toggle('show', !navigator.onLine);
+    window.addEventListener('online',  update);
+    window.addEventListener('offline', update);
+    update();
+  })();
 
   /* ── الدخول ── */
   function login() {
@@ -48,6 +63,17 @@
     });
   }
 
+  /* ── منع إطفاء الشاشة أثناء تسجيل الحضور ── */
+  let wakeLock = null;
+  async function acquireWakeLock() {
+    if ('wakeLock' in navigator) {
+      try { wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+    }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+
   /* ── الرئيسية ── */
   async function home() {
     const td = ui.today(), mo = td.slice(0, 7), rg = A.monthRange(mo);
@@ -60,7 +86,6 @@
     const g = hour < 12 ? 'صباح الخير' : hour < 18 ? 'مساء الخير' : 'مساء النور';
     const restricted = CFG.geo.enabled && !ME.remote;
     const state = !rec.in ? 'in' : !rec.out ? 'out' : 'done';
-    const initials = (ME.name || 'م').trim()[0];
 
     view.innerHTML =
       /* Hero */
@@ -97,20 +122,20 @@
       /* Stats */
       '<section class="grid2">' +
         '<div class="card stat">' +
-          '<div class="stat-ic" style="background:#eff6ff;color:#2563eb">' + ui.icon('clock') + '</div>' +
+          '<div class="stat-ic" style="background:#2a1a0a;color:#c9933a">' + ui.icon('clock') + '</div>' +
           '<span>أيام حضوري هذا الشهر</span><b>' + present + '</b>' +
         '</div>' +
         '<div class="card stat">' +
-          '<div class="stat-ic" style="background:#f0fdf4;color:#16a34a">' + ui.icon('calendar') + '</div>' +
+          '<div class="stat-ic" style="background:#052e16;color:#4ade80">' + ui.icon('calendar') + '</div>' +
           '<span>رصيد ' + esc(mt ? mt.name : 'الإجازة') + '</span>' +
           '<b>' + (mb && !mb.unlimited ? mb.remaining : '—') + '</b>' +
         '</div>' +
         '<div class="card stat">' +
-          '<div class="stat-ic" style="background:#fffbeb;color:#d97706">' + ui.icon('list') + '</div>' +
+          '<div class="stat-ic" style="background:#2a1500;color:#e8b87a">' + ui.icon('list') + '</div>' +
           '<span>طلبات معلقة</span><b>' + pend + '</b>' +
         '</div>' +
         '<a class="card stat lnk" href="#slips">' +
-          '<div class="stat-ic" style="background:#f5f3ff;color:#7c3aed">' + ui.icon('wallet') + '</div>' +
+          '<div class="stat-ic" style="background:#1a0a3e;color:#c084fc">' + ui.icon('wallet') + '</div>' +
           '<span>قسيمة الراتب</span><b>عرض ›</b>' +
         '</a>' +
       '</section>';
@@ -119,21 +144,28 @@
     timer = setInterval(() => {
       const c = document.getElementById('clk'); if (c) c.textContent = hm();
       const e = document.getElementById('el'); if (e && rec.in) e.textContent = dur(mins(hm()) - mins(rec.in));
-    }, 20000);
+    }, 1000); /* تحديث كل ثانية */
 
     view.querySelectorAll('[data-pos]').forEach(b => { b.onclick = () => { H.state.demoPos = b.dataset.pos; home(); }; });
-    const pb = view.querySelector('#pb'); if (pb) pb.onclick = () => punch(pb.dataset.k, restricted);
+    const pb = view.querySelector('#pb');
+    if (pb) pb.onclick = () => {
+      navigator.vibrate && navigator.vibrate(80); /* Haptic feedback */
+      punch(pb.dataset.k, restricted);
+    };
   }
 
   async function punch(kind, restricted) {
     const btn = view.querySelector('#pb'), msg = view.querySelector('#pm');
     btn.disabled = true; msg.className = 'pm'; msg.textContent = restricted ? 'جاري تحديد موقعك...' : 'جاري التسجيل...';
+    if (restricted) await acquireWakeLock(); /* منع إطفاء الشاشة */
     try {
       const pos = restricted ? await getPos() : {}; msg.textContent = 'جاري التسجيل...';
       const r = await (kind === 'in' ? A.checkIn(pos) : A.checkOut(pos));
+      navigator.vibrate && navigator.vibrate([80, 40, 80]); /* Haptic تأكيد */
       ui.toast((kind === 'in' ? '✅ تم تسجيل الحضور ' : '👋 تم تسجيل الانصراف ') + r.time + (r.site ? ' • ' + r.site : ''));
+      releaseWakeLock();
       go();
-    } catch (e) { btn.disabled = false; msg.className = 'pm err'; msg.textContent = e.message; }
+    } catch (e) { btn.disabled = false; msg.className = 'pm err'; msg.textContent = e.message; releaseWakeLock(); }
   }
 
   /* ── الإجازات ── */
@@ -290,13 +322,22 @@
     };
     const kv = (a, b) => '<div class="kv"><span>' + a + '</span><b>' + (b ? esc(b) : '—') + '</b></div>';
     const initials = (e.name || 'م').trim()[0];
-
-    // dark mode toggle
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    /* ── تحويل مسار الصورة لـ signed URL ── */
+    let photoSrc = null;
+    if (e.photo) {
+      photoSrc = H.files && H.files.photoUrl
+        ? await H.files.photoUrl(e.photo).catch(() => null)
+        : e.photo;
+    }
+    const avtHtml = photoSrc
+      ? '<img src="' + photoSrc + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">'
+      : esc(initials);
 
     view.innerHTML = '<h2 class="pt">حسابي</h2>' +
       '<section class="card prof">' +
-        '<div class="avt">' + (e.photo ? '<img src="' + e.photo + '" alt="">' : esc(initials)) + '</div>' +
+        '<div class="avt">' + avtHtml + '</div>' +
         '<h3>' + esc(e.name) + '</h3>' +
         '<p>' + esc(e.title || '') + (e.dept ? ' • ' + esc(e.dept) : '') + '</p>' +
       '</section>' +
@@ -324,7 +365,6 @@
     view.querySelector('#lo2').onclick = () => H.mode === 'local' ? location.reload() : H.auth.logout();
   }
 
-  /* ── التنقل ── */
   /* ── الطلبات ── */
   async function requests() {
     const td = ui.today();
@@ -387,8 +427,6 @@
 
     view.innerHTML =
       '<h2 class="pt">طلباتي</h2>' +
-
-      /* Tabs */
       '<div class="seg">' +
         tabs.map(t =>
           '<button class="seg-btn' + (t.k === tab ? ' on' : '') + '" data-t="' + t.k + '">' +
@@ -396,25 +434,18 @@
           '</button>'
         ).join('') +
       '</div>' +
-
-      /* زر جديد */
       '<button class="btn block" id="new-req" style="margin:12px 0">' + btnLabel[tab] + '</button>' +
-
-      /* القائمة */
       '<section class="card">' +
         (rows.length
           ? rows.map(rowHtml).join('')
           : '<p class="mu" style="text-align:center;padding:16px">لا توجد طلبات</p>') +
       '</section>';
 
-    /* Tabs switch */
     view.querySelectorAll('[data-t]').forEach(b => {
       b.onclick = () => { H.state.reqTab = b.dataset.t; requests(); };
     });
 
-    /* زر جديد */
     view.querySelector('#new-req').onclick = async () => {
-
       if (tab === 'loan') {
         const o = await ui.form('💰 طلب سلفة', [
           { n: 'amount', l: 'المبلغ المطلوب',   t: 'number', req: 1 },
@@ -424,11 +455,8 @@
         if (!o) return;
         if (+o.amount <= 0 || +o.months <= 0) return ui.toast('تحقق من المبلغ وعدد الأشهر');
         await A.createRequest({ type: 'loan', empId: ME.id, amount: +o.amount, months: +o.months, reason: o.reason });
-        ui.toast('✅ تم رفع طلب السلفة');
-        requests();
-      }
-
-      else if (tab === 'overtime') {
+        ui.toast('✅ تم رفع طلب السلفة'); requests();
+      } else if (tab === 'overtime') {
         const o = await ui.form('⏰ أوفر تايم', [
           { n: 'date',  l: 'التاريخ',       t: 'date',   req: 1 },
           { n: 'hours', l: 'عدد الساعات',   t: 'number', req: 1 },
@@ -437,11 +465,8 @@
         if (!o) return;
         if (+o.hours <= 0) return ui.toast('عدد الساعات لازم يكون أكبر من صفر');
         await A.createRequest({ type: 'overtime', empId: ME.id, date: o.date, hours: +o.hours, note: o.note });
-        ui.toast('✅ تم رفع طلب الأوفر تايم');
-        requests();
-      }
-
-      else if (tab === 'change') {
+        ui.toast('✅ تم رفع طلب الأوفر تايم'); requests();
+      } else if (tab === 'change') {
         const o = await ui.form('📝 تغيير بيانات', [
           { n: 'field', l: 'الحقل', opts: [
             ['phone','الهاتف'], ['bank','الحساب البنكي'],
@@ -452,12 +477,12 @@
         ]);
         if (!o) return;
         await A.createRequest({ type: 'change', empId: ME.id, field: o.field, newValue: o.newValue, note: o.note });
-        ui.toast('✅ تم رفع طلب تغيير البيانات');
-        requests();
+        ui.toast('✅ تم رفع طلب تغيير البيانات'); requests();
       }
     };
   }
 
+  /* ── Nav مع badge للطلبات المعلقة ── */
   const TABS = () => [
     ['home',     'الرئيسية', 'home'],
     ['leaves',   'الإجازات', 'calendar'],
@@ -471,11 +496,24 @@
   async function go() {
     const h = location.hash.slice(1), k = TABS().some(t => t[0] === h) ? h : 'home';
     nav.style.display = 'flex';
-    nav.innerHTML = TABS().map(t =>
-      '<a href="#' + t[0] + '" class="' + (t[0] === k ? 'on' : '') + '">' +
-        ui.icon(t[2]) + '<span>' + t[1] + '</span>' +
-      '</a>'
-    ).join('');
+
+    /* حساب الطلبات والإجازات المعلقة للـ badge */
+    let pendLeaves = 0, pendReqs = 0;
+    try {
+      const [lv, rq] = await Promise.all([A.leaves(ME.id), A.myRequests(ME.id)]);
+      pendLeaves = lv.filter(l => l.status === 'معلقة').length;
+      pendReqs   = rq.filter(r => r.status === 'معلقة').length;
+    } catch (_) {}
+
+    nav.innerHTML = TABS().map(t => {
+      let badge = '';
+      if (t[0] === 'leaves'   && pendLeaves) badge = '<span class="nav-badge">' + pendLeaves + '</span>';
+      if (t[0] === 'requests' && pendReqs)   badge = '<span class="nav-badge">' + pendReqs + '</span>';
+      return '<a href="#' + t[0] + '" class="' + (t[0] === k ? 'on' : '') + '">' +
+        ui.icon(t[2]) + badge + '<span>' + t[1] + '</span>' +
+      '</a>';
+    }).join('');
+
     clearInterval(timer);
     try { await PAGES[k](); }
     catch (e) { view.innerHTML = '<div class="card em err">تعذر تحميل الصفحة: ' + esc(e.message) + '</div>'; }
