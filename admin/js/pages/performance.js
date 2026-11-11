@@ -94,7 +94,7 @@
     const sc = [5, 4, 3, 2, 1].map(n => [n, n + ' / 5']);
     root.onclick = async e => {
       const b = e.target.closest('[data-a]'); if (!b) return;
-      if (b.dataset.a === 'compare') { showCompare(E, R, ui); return; }
+      if (b.dataset.a === 'compare') { HR.pages.performance.showCompare(E, R, ui); return; }
       if (b.dataset.a === 'del') {
         if (!confirm('حذف التقييم؟')) return;
         await store.remove('reviews', b.closest('[data-id]').dataset.id);
@@ -116,10 +116,10 @@
       ui.toast('✅ تم حفظ التقييم');
       HR.refresh();
     };
-  }
+  },
 
 /* ── [M] مقارنة أداء موظف بين شهرين ── */
-async function showCompare(E, R, ui) {
+  async showCompare(E, R, ui) {
   const esc = ui.esc;
   const empOpts = E.map(e => [e.id, e.name]);
   const periods = [...new Set(R.map(r => r.period))].sort().reverse();
@@ -165,5 +165,6 @@ async function showCompare(E, R, ui) {
     '<div class="acts" style="margin-top:16px"><button class="btn ghost" onclick="this.closest(\'.mo\').remove()">إغلاق</button></div>',
     true
   );
-}
+  },
+
 };
