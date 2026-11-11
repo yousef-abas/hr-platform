@@ -1,4 +1,4 @@
-/* ─────────────────────────────────────────────────────────────────────
+﻿/* ─────────────────────────────────────────────────────────────────────
    pdf-export.js  —  تصدير PDF بدون مكتبات خارجية (print-based)
    يستخدم نافذة طباعة مخصصة بـ CSS عشان يطبع كـ PDF
    ───────────────────────────────────────────────────────────────────── */
@@ -258,4 +258,112 @@ HR.pdf = {
       }, 600);
     };
   }
+
+  /* ── [K] ملف الموظف الكامل PDF ── */
+  employeeProfile(emp, att, leaves, reviews, month) {
+    const ui = HR.ui;
+    const td = ui.today();
+    const present = att.filter(a => a.in).length;
+    const late    = att.filter(a => a.in && a.in > '09:30').length;
+    const absent  = att.filter(a => !a.in).length;
+    const appAtt  = att.filter(a => a.source === 'app').length;
+    const approvedLeaves = leaves.filter(l => l.status === 'معتمدة' || l.status === 'موافق عليها');
+    const totalLeaveDays = approvedLeaves.reduce((s, l) => s + (l.days||0), 0);
+    const avgReview = reviews.length ? (reviews.reduce((s,r)=>s+r.avg,0)/reviews.length).toFixed(1) : '—';
+    const kv = (l, v) => `<div class="kv-row"><span>${ui.esc(l)}</span><b>${ui.esc(String(v||'—'))}</b></div>`;
+
+    const html = `
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head><meta charset="utf-8">
+<title>ملف الموظف — ${ui.esc(emp.name)}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Cairo',sans-serif;color:#1e293b;background:#fff;padding:28px;font-size:12px;direction:rtl}
+  .hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c9933a;padding-bottom:14px;margin-bottom:20px}
+  .logo{font-size:20px;font-weight:900;color:#c9933a}
+  .logo span{color:#1e293b}
+  h2{font-size:14px;font-weight:800;color:#c9933a;margin:16px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .kv-row{display:flex;justify-content:space-between;padding:5px 10px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0}
+  .kv-row span{color:#64748b}
+  .kv-row b{color:#1e293b}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .kpi{background:#f8fafc;border-radius:8px;padding:10px;text-align:center;border:1px solid #e2e8f0}
+  .kpi-val{font-size:22px;font-weight:900;color:#c9933a}
+  .kpi-lbl{font-size:11px;color:#64748b}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+  th{background:#f1f5f9;padding:7px 10px;text-align:right;font-weight:700;color:#475569}
+  td{padding:6px 10px;border-bottom:1px solid #f1f5f9}
+  .ok{color:#16a34a;font-weight:700} .da{color:#dc2626;font-weight:700} .wa{color:#d97706;font-weight:700}
+  .footer{margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
+  @media print{body{padding:0}}
+</style></head><body>
+<div class="hdr">
+  <div class="logo">CLEO <span>HR</span></div>
+  <div style="text-align:left;color:#64748b">
+    <b style="font-size:14px;color:#1e293b">ملف الموظف</b><br>
+    <span>تاريخ الطباعة: ${td}</span>
+  </div>
+</div>
+
+<h2>البيانات الأساسية</h2>
+<div class="grid2">
+  ${kv('الاسم', emp.name)}
+  ${kv('الوظيفة', emp.title)}
+  ${kv('القسم', emp.dept)}
+  ${kv('تاريخ التعيين', emp.hire)}
+  ${kv('الموبايل', emp.phone)}
+  ${kv('الإيميل', emp.email)}
+  ${kv('الحالة', emp.status === 'active' ? 'نشط' : emp.status === 'leave' ? 'في إجازة' : 'منتهي')}
+  ${kv('الراتب الأساسي', ui.money(emp.salary))}
+  ${emp.contractEnd ? kv('انتهاء العقد', emp.contractEnd) : ''}
+</div>
+
+<h2>ملخص الحضور — ${month}</h2>
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi-val ok">${present}</div><div class="kpi-lbl">أيام حضور</div></div>
+  <div class="kpi"><div class="kpi-val da">${absent}</div><div class="kpi-lbl">أيام غياب</div></div>
+  <div class="kpi"><div class="kpi-val wa">${late}</div><div class="kpi-lbl">مرات تأخير</div></div>
+  <div class="kpi"><div class="kpi-val">${appAtt}</div><div class="kpi-lbl">من التطبيق</div></div>
+</div>
+
+${att.length ? `
+<table>
+  <tr><th>التاريخ</th><th>الحضور</th><th>الانصراف</th><th>المصدر</th></tr>
+  ${att.slice(0,20).map(a => `<tr>
+    <td>${a.date}</td>
+    <td class="${a.in ? (a.in>'09:30'?'wa':'ok') : 'da'}">${a.in||'—'}</td>
+    <td>${a.out||'—'}</td>
+    <td>${a.source==='app'?'📱 التطبيق':'💻 يدوي'}</td>
+  </tr>`).join('')}
+</table>` : '<p style="color:#94a3b8;padding:8px">لا توجد سجلات حضور</p>'}
+
+<h2>الإجازات</h2>
+<div class="grid2">
+  ${kv('إجمالي أيام الإجازة', totalLeaveDays + ' يوم')}
+  ${kv('عدد الطلبات المعتمدة', approvedLeaves.length)}
+</div>
+${approvedLeaves.length ? `
+<table>
+  <tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th></tr>
+  ${approvedLeaves.slice(0,10).map(l => `<tr><td>${l.type}</td><td>${l.from}</td><td>${l.to}</td><td>${l.days}</td></tr>`).join('')}
+</table>` : ''}
+
+${reviews.length ? `
+<h2>تقييمات الأداء</h2>
+<div class="grid2">${kv('متوسط التقييم الكلي', avgReview + ' / 5')}</div>
+<table>
+  <tr><th>الفترة</th><th>جودة العمل</th><th>التعاون</th><th>الالتزام</th><th>المبادرة</th><th>المتوسط</th></tr>
+  ${reviews.map(r => `<tr><td>${r.period}</td><td>${r.q}</td><td>${r.t}</td><td>${r.p}</td><td>${r.i}</td><td><b>${Number(r.avg).toFixed(1)}</b></td></tr>`).join('')}
+</table>` : ''}
+
+<div class="footer">CLEO HR — تقرير سري خاص بالشركة — ${new Date().toLocaleString('ar-EG')}</div>
+</body></html>`;
+
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  },
 };

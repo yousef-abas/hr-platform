@@ -1,4 +1,4 @@
-/* ════════════════════════════════════════════════════════
+﻿/* ════════════════════════════════════════════════════════
    نظام ATS — التوظيف الكامل
    المراحل: وظائف · pipeline · مقابلات · عرض · تعيين
    ════════════════════════════════════════════════════════ */
@@ -479,8 +479,25 @@ HR.pages.recruitment = {
         const idx = ACTIVE_STAGES.findIndex(s => s.k === (c.stage || 'applied'));
         const nidx = idx + (a === 'next' ? 1 : -1);
         if (nidx < 0 || nidx >= ACTIVE_STAGES.length) return;
-        await store.update('candidates', id, { stage: ACTIVE_STAGES[nidx].k });
+        const newStage = ACTIVE_STAGES[nidx].k;
+        await store.update('candidates', id, { stage: newStage });
         CANDS = await store.list('candidates');
+        /* [N] تنبيه HR عند وصول مرشح لمرحلة المقابلة */
+        if (newStage === 'interview') {
+          const cand = candOf(id);
+          try {
+            await HR.store.create('inbox', {
+              empId:   HR.user.employeeId || null,
+              type:    'system',
+              title:   '🎯 مرشح وصل لمرحلة المقابلة',
+              body:    (cand ? cand.name : '') + ' — ' + (jobOf(cand) ? jobOf(cand).title : ''),
+              url:     '#recruitment',
+              read:    false,
+              created: new Date().toISOString()
+            });
+          } catch (_) {}
+          ui.toast('📬 تم إشعار الـ HR بالمقابلة');
+        }
         draw(); return;
       }
 

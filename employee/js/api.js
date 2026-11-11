@@ -1,4 +1,4 @@
-/* واجهة بيانات التطبيق: Supabase الحقيقي أو وضع تجريبي محلي */
+﻿/* واجهة بيانات التطبيق: Supabase الحقيقي أو وضع تجريبي محلي */
 (function () {
   const H = window.HR, A = H.api = {}, ui = H.ui, pad = n => String(n).padStart(2, '0');
   A.monthRange = m => { const y = +m.slice(0, 4), mo = +m.slice(5, 7); return { from: m + '-01', to: m + '-' + pad(new Date(Date.UTC(y, mo, 0)).getUTCDate()) }; };
@@ -24,6 +24,21 @@
 
     /* ── الطلبات ── */
     A.myRequests   = async id => { const r = await sb.from('requests').select('*').eq('emp_id', id).order('created_at', { ascending: false }); err(r.error); return r.data.map(x => ({ id: x.id, type: x.type, status: x.status, amount: x.amount, months: x.months, remaining: x.remaining, reason: x.reason, date: x.date, hours: x.hours, field: x.field, newValue: x.new_value, note: x.note, hrNote: x.hr_note, createdAt: x.created_at })); };
+
+    /* ── [A] Push subscription ── */
+    /* ── [F] Error logging + [E] Inbox ── */
+    A.announcements = async () => { const r = await sb.from('announcements').select('*').eq('active', true).order('pinned', { ascending: false }).order('created_at', { ascending: false }).limit(5); err(r.error); return r.data || []; };
+    A.logError = async (ctx, msg, stack, url) => {
+      try {
+        const empId = window.HR && window.HR.user ? window.HR.user.employeeId : null;
+        await sb.from('error_logs').insert({ emp_id: empId, context: ctx, message: (msg||'').slice(0,500), stack: (stack||'').slice(0,2000), url: (url||'').slice(0,300) });
+      } catch (_) {}
+    };
+    A.inbox = async () => { const r = await sb.from('inbox').select('*').order('created_at', { ascending: false }).limit(50); err(r.error); return r.data; };
+    A.markRead = async id => { await sb.from('inbox').update({ read: true }).eq('id', id); };
+
+    A.savePushSub  = async (empId, sub) => { try { await sb.from('push_subscriptions').upsert({ emp_id: empId, subscription: sub, updated_at: new Date().toISOString() }, { onConflict: 'emp_id' }); } catch (_) {} };
+    A.sendPushToSelf = async (title, body, url) => { try { await sb.rpc('notify_employee', { p_emp_id: ME ? ME.id : null, p_title: title, p_body: body, p_url: url || './' }); } catch (_) {} };
     A.createRequest = async o => { const r = await sb.from('requests').insert({ emp_id: o.empId, type: o.type, status: 'معلقة', amount: o.amount || null, months: o.months || null, remaining: o.amount || null, reason: o.reason || null, date: o.date || null, hours: o.hours || null, field: o.field || null, new_value: o.newValue || null, note: o.note || null, created_at: new Date().toISOString() }).select().single(); err(r.error); return r.data; };
 
   } else {
@@ -60,6 +75,13 @@
     /* ── الطلبات (تجريبي) ── */
     if (!S().requests) S().requests = [];
     A.myRequests    = async id => (S().requests || []).filter(r => r.empId === id).slice().reverse();
+    A.announcements = async () => []; /* تجريبي */
+    A.logError = async () => {}; /* تجريبي */
+    A.inbox    = async () => []; /* تجريبي */
+    A.markRead = async () => {}; /* تجريبي */
+    A.savePushSub  = async () => {}; /* تجريبي — لا يرسل push حقيقي */
     A.createRequest = async o => { const r = Object.assign({ id: 'r' + Math.random().toString(36).slice(2, 8), status: 'معلقة', createdAt: new Date().toISOString() }, o); S().requests.push(r); save(); return r; };
   }
 })();
+
+

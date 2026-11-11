@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const H = window.HR, ui = H.ui;
 
   /* ── صفحات الـ sidebar ── */
@@ -14,6 +14,7 @@
     { section: 'المالية' },
     { k: 'payroll',     label: 'الرواتب',         icon: 'wallet' },
     { k: 'requests',    label: 'الطلبات',         icon: 'list' },
+    { k: 'announcements', label: 'الإعلانات',       icon: 'megaphone' },
   ];
   const NAV_MANAGER = [
     { section: 'الرئيسية' },
@@ -33,9 +34,24 @@
     { section: 'الإدارة' },
     { k: 'users',      label: 'المستخدمون', icon: 'shield' },
     { k: 'audit',      label: 'سجل التدقيق', icon: 'list' },
+    { k: 'errors',     label: 'سجل الأخطاء', icon: 'x' },
   ];
   const ROLE = { admin: 'مدير النظام', hr: 'موارد بشرية', manager: 'مدير قسم', supervisor: 'مشرف', employee: 'موظف' };
   const AVATAR_COLORS = ['#c9933a','#7c3aed','#0891b2','#16a34a','#d97706'];
+
+  /* ── [F] Error Logger ── */
+  window.addEventListener('error', e => {
+    if (!window.HR || !HR.store) return;
+    try {
+      HR.store.create('error_logs', {
+        empId:   HR.user ? HR.user.employeeId : null,
+        context: 'admin-panel',
+        message: e.message || String(e),
+        stack:   e.error ? e.error.stack : '',
+        url:     location.href
+      });
+    } catch (_) {}
+  });
 
   window.addEventListener('unhandledrejection', e => {
     ui.toast('تعذر تنفيذ العملية: ' + ((e.reason && e.reason.message) || e.reason));
@@ -321,3 +337,4 @@
   setTimeout(() => sp.remove(), 3800);
   H.gate().then(start);
 })();
+

@@ -1,4 +1,4 @@
-HR.pages.performance = {
+﻿HR.pages.performance = {
   title: 'تقييم الأداء', icon: 'star',
   async render(root) {
     const { store, ui } = HR;
@@ -20,6 +20,7 @@ HR.pages.performance = {
 
     root.innerHTML =
       ui.head('تقييم الأداء', 'قيّم الموظفين على أربعة محاور وتابع الترتيب',
+        '<button class="btn ghost" data-a="compare">📊 مقارنة موظف</button>' +
         '<button class="btn" data-a="add">+ تقييم جديد</button>'
       ) +
 
@@ -93,6 +94,7 @@ HR.pages.performance = {
     const sc = [5, 4, 3, 2, 1].map(n => [n, n + ' / 5']);
     root.onclick = async e => {
       const b = e.target.closest('[data-a]'); if (!b) return;
+      if (b.dataset.a === 'compare') { showCompare(E, R, ui); return; }
       if (b.dataset.a === 'del') {
         if (!confirm('حذف التقييم؟')) return;
         await store.remove('reviews', b.closest('[data-id]').dataset.id);
@@ -115,4 +117,53 @@ HR.pages.performance = {
       HR.refresh();
     };
   }
+
+/* ── [M] مقارنة أداء موظف بين شهرين ── */
+async function showCompare(E, R, ui) {
+  const esc = ui.esc;
+  const empOpts = E.map(e => [e.id, e.name]);
+  const periods = [...new Set(R.map(r => r.period))].sort().reverse();
+
+  const o = await ui.form('مقارنة الأداء', [
+    { n: 'empId', l: 'الموظف',     opts: empOpts, req: 1 },
+    { n: 'p1',    l: 'الفترة الأولى',  opts: periods.map(p => [p, p]), req: 1 },
+    { n: 'p2',    l: 'الفترة الثانية', opts: periods.map(p => [p, p]), req: 1 }
+  ]);
+  if (!o || o.p1 === o.p2) { if (o) ui.toast('اختر فترتين مختلفتين'); return; }
+
+  const r1 = R.find(r => r.empId === o.empId && r.period === o.p1);
+  const r2 = R.find(r => r.empId === o.empId && r.period === o.p2);
+  if (!r1 || !r2) { ui.toast('لا توجد تقييمات للفترتين المختارتين'); return; }
+
+  const emp = E.find(e => e.id === o.empId);
+  const axes = [['q','جودة العمل'],['t','التعاون'],['p','الالتزام'],['i','المبادرة'],['avg','المتوسط']];
+  const diff = v => {
+    if (v > 0) return '<span style="color:#16a34a">▲ +' + v.toFixed(1) + '</span>';
+    if (v < 0) return '<span style="color:#ef4444">▼ ' + v.toFixed(1) + '</span>';
+    return '<span style="color:var(--mu)">= ' + v.toFixed(1) + '</span>';
+  };
+  const bar = (v, mx) => '<div style="display:inline-block;width:60px;height:6px;background:var(--bo);border-radius:3px;vertical-align:middle;margin:0 4px"><div style="width:' + Math.round(v/mx*100) + '%;height:100%;background:#c9933a;border-radius:3px"></div></div>';
+
+  ui.modal('مقارنة أداء — ' + esc(emp ? emp.name : ''),
+    '<div style="overflow:auto">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:14px">' +
+    '<thead><tr style="border-bottom:2px solid var(--bo)">' +
+      '<th style="padding:10px;text-align:right">المحور</th>' +
+      '<th style="padding:10px;text-align:center;color:#c9933a">' + o.p1 + '</th>' +
+      '<th style="padding:10px;text-align:center;color:#7c3aed">' + o.p2 + '</th>' +
+      '<th style="padding:10px;text-align:center">التغيير</th>' +
+    '</tr></thead><tbody>' +
+    axes.map(([k, l]) =>
+      '<tr style="border-bottom:1px solid var(--bo)">' +
+        '<td style="padding:10px;font-weight:600">' + l + '</td>' +
+        '<td style="padding:10px;text-align:center">' + bar(r1[k], 5) + '<b>' + Number(r1[k]).toFixed(1) + '</b></td>' +
+        '<td style="padding:10px;text-align:center">' + bar(r2[k], 5) + '<b>' + Number(r2[k]).toFixed(1) + '</b></td>' +
+        '<td style="padding:10px;text-align:center">' + diff(r2[k] - r1[k]) + '</td>' +
+      '</tr>'
+    ).join('') +
+    '</tbody></table></div>' +
+    '<div class="acts" style="margin-top:16px"><button class="btn ghost" onclick="this.closest(\'.mo\').remove()">إغلاق</button></div>',
+    true
+  );
+}
 };

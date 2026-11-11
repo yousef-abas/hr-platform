@@ -1,4 +1,4 @@
-HR.pages.attendance = {
+﻿HR.pages.attendance = {
   title: 'الحضور', icon: 'clock',
   async render(root) {
     const { store, ui, state: st } = HR, esc = ui.esc;
@@ -14,6 +14,15 @@ HR.pages.attendance = {
       A = (await store.list('attendance')).filter(a => a.date.startsWith(month));
     }
 
+    /* [L] فلتر متقدم */
+    st.attFilter = st.attFilter || 'all'; // all | late | absent | present
+    st.attDept   = st.attDept   || '';
+
+    const depts = [...new Set(E.map(e => e.dept).filter(Boolean))].sort();
+    const EF = E.filter(e =>
+      (!st.attDept || e.dept === st.attDept)
+    );
+
     const rec    = id => A.find(a => a.empId === id && a.date === st.date) || {};
     const todayA = E.map(e => rec(e.id));
     const nPresent = todayA.filter(r => r.in).length;
@@ -25,6 +34,16 @@ HR.pages.attendance = {
     root.innerHTML =
       ui.head('الحضور والانصراف', 'سجل اليوم وملخص الشهر',
         '<input type="date" id="dt" value="' + st.date + '">' +
+        '<select id="att-dept"><option value="">كل الأقسام</option>' +
+          depts.map(d => '<option value="' + ui.esc(d) + '"' + (d === st.attDept ? ' selected' : '') + '>' + ui.esc(d) + '</option>').join('') +
+        '</select>' +
+        '<select id="att-filter">' +
+          '<option value="all"'     + (st.attFilter==='all'     ? ' selected':'')+'>الكل</option>' +
+          '<option value="present"' + (st.attFilter==='present' ? ' selected':'')+'>الحاضرون</option>' +
+          '<option value="late"'    + (st.attFilter==='late'    ? ' selected':'')+'>المتأخرون</option>' +
+          '<option value="absent"'  + (st.attFilter==='absent'  ? ' selected':'')+'>الغائبون</option>' +
+        '</select>' +
+        '<button class="btn ghost" data-a="abs-report">📊 تقرير الغياب</button>' +
         '<button class="btn ghost" data-a="geo">📍 مواقع العمل</button>'
       ) +
 
@@ -53,7 +72,13 @@ HR.pages.attendance = {
         '<h3>سجل يوم ' + st.date + '</h3>' +
         '<div class="tw"><table>' +
           '<tr><th>الموظف</th><th>الحضور</th><th>الانصراف</th><th>المدة</th><th>الحالة</th><th></th></tr>' +
-          E.map(e => {
+          EF.filter(e => {
+            const r = rec(e.id);
+            if (st.attFilter === 'present') return !!r.in;
+            if (st.attFilter === 'absent')  return !r.in;
+            if (st.attFilter === 'late')    return r.in && r.in > '09:30';
+            return true;
+          }).map(e => {
             const r = rec(e.id);
             const s = !r.in
               ? ui.tag('لم يسجل', 'da')
@@ -82,7 +107,7 @@ HR.pages.attendance = {
         '<h3>ملخص شهر ' + month + '</h3>' +
         '<div class="tw"><table>' +
           '<tr><th>الموظف</th><th>أيام الحضور</th><th>مرات التأخير</th><th>متوسط المدة</th></tr>' +
-          E.map(e => {
+          EF.map(e => {
             const m = A.filter(a => a.empId === e.id && a.in);
             const late = m.filter(a => a.in > '09:30').length;
             const avgMins = m.filter(a => a.out).length
@@ -107,9 +132,82 @@ HR.pages.attendance = {
       HR.refresh();
     };
 
+
+  /* ── [D] تقرير الغياب المتكرر ── */
+  async function showAbsenceReport(root, E, A_all) {
+    const { ui } = HR, esc = ui.esc;
+    const today = ui.today();
+    const thisMonth = today.slice(0, 7);
+
+    /* احسب أيام الغياب لكل موظف في الشهر الحالي */
+    const workdays = [];
+    const y = +thisMonth.slice(0,4), m = +thisMonth.slice(5,7);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt = thisMonth + '-' + String(d).padStart(2,'0');
+      if (dt > today) break;
+      const dow = new Date(dt).getDay(); /* 5=Fri, 6=Sat */
+      if (dow !== 5 && dow !== 6) workdays.push(dt);
+    }
+
+    const monthA = A_all.filter(a => a.date && a.date.startsWith(thisMonth));
+
+    const rows = E.map(e => {
+      const present = workdays.filter(d => monthA.some(a => a.empId === e.id && a.in && a.date === d)).length;
+      const absent  = workdays.length - present;
+      const lateArr = monthA.filter(a => a.empId === e.id && a.in && a.in > '09:30');
+      return { e, present, absent, late: lateArr.length, pct: workdays.length ? Math.round(present / workdays.length * 100) : 100 };
+    }).sort((a, b) => b.absent - a.absent);
+
+    const color = p => p >= 90 ? '#16a34a' : p >= 75 ? '#d97706' : '#dc2626';
+
+    const m2 = ui.modal('تقرير الغياب — ' + thisMonth,
+      '<div style="overflow:auto;max-height:65vh">' +
+      '<table class="tbl" style="width:100%;border-collapse:collapse">' +
+      '<thead><tr>' +
+        '<th>الموظف</th><th>القسم</th>' +
+        '<th>أيام حضور</th><th>أيام غياب</th><th>تأخير</th><th>نسبة الحضور</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(r =>
+        '<tr style="border-bottom:1px solid var(--bo)">' +
+          '<td style="padding:8px 12px"><b>' + esc(r.e.name) + '</b></td>' +
+          '<td style="padding:8px 12px;color:var(--mu)">' + esc(r.e.dept || '—') + '</td>' +
+          '<td style="padding:8px 12px;text-align:center">' + r.present + '</td>' +
+          '<td style="padding:8px 12px;text-align:center;font-weight:' + (r.absent > 3 ? '700' : '400') + ';color:' + (r.absent > 3 ? '#dc2626' : 'inherit') + '">' + r.absent + '</td>' +
+          '<td style="padding:8px 12px;text-align:center;color:' + (r.late > 2 ? '#d97706' : 'inherit') + '">' + r.late + '</td>' +
+          '<td style="padding:8px 12px">' +
+            '<div style="display:flex;align-items:center;gap:8px">' +
+              '<div style="flex:1;height:6px;background:var(--bo);border-radius:3px"><div style="width:' + r.pct + '%;height:6px;background:' + color(r.pct) + ';border-radius:3px"></div></div>' +
+              '<span style="color:' + color(r.pct) + ';font-weight:700;font-size:13px;min-width:36px">' + r.pct + '%</span>' +
+            '</div>' +
+          '</td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table>' +
+      (rows.filter(r => r.absent > 3).length
+        ? '<div class="al da" style="margin-top:12px">⚠️ ' + rows.filter(r => r.absent > 3).length + ' موظف تجاوز 3 أيام غياب هذا الشهر</div>'
+        : '<div class="al ok" style="margin-top:12px">✅ لا يوجد موظفون تجاوزوا حد الغياب هذا الشهر</div>') +
+      '</div>' +
+      '<div class="acts" style="margin-top:16px"><button class="btn" id="exp-abs">تصدير CSV</button><button class="btn ghost" id="cl-abs">إغلاق</button></div>',
+      true
+    );
+
+    m2.el.querySelector('#cl-abs').onclick = m2.close;
+    m2.el.querySelector('#exp-abs').onclick = () => {
+      ui.csv('absence-report-' + thisMonth + '.csv',
+        [['الموظف','القسم','حضور','غياب','تأخير','نسبة الحضور%']].concat(
+          rows.map(r => [r.e.name, r.e.dept||'', r.present, r.absent, r.late, r.pct+'%'])
+        )
+      );
+    };
+  }
     root.querySelector('#dt').onchange = e => { st.date = e.target.value || ui.today(); HR.refresh(); };
+    const deptSel = root.querySelector('#att-dept'); if (deptSel) deptSel.onchange = e => { st.attDept = e.target.value; HR.refresh(); };
+    const fltSel  = root.querySelector('#att-filter'); if (fltSel) fltSel.onchange  = e => { st.attFilter = e.target.value; HR.refresh(); };
     root.onchange = e => { const t = e.target; if (t.dataset.f) put(t.closest('tr').dataset.id, t.dataset.f, t.value); };
     root.onclick = e => {
+      const bAbs = e.target.closest('[data-a="abs-report"]');
+      if (bAbs) { showAbsenceReport(root, E, A); return; }
       const b = e.target.closest('[data-a="now"]'); if (!b) return;
       const id = b.closest('tr').dataset.id, r = rec(id), n = new Date().toTimeString().slice(0, 5);
       put(id, r.in ? 'out' : 'in', n);
@@ -187,3 +285,5 @@ HR.pages.attendance = {
     };
   }
 };
+
+

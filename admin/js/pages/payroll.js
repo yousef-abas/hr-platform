@@ -1,4 +1,4 @@
-HR.pages.payroll = {
+﻿HR.pages.payroll = {
   title: 'الرواتب', icon: 'wallet',
   async render(root) {
     const { store, ui, state: st } = HR, P = HR.payroll, esc = ui.esc;
@@ -304,12 +304,38 @@ HR.pages.payroll = {
           if (!rid) { const nr = await store.create('runs', { month, status: ns, approvedBy: data.approvedBy, approvedAt: data.approvedAt }); rid = nr.id; }
           else await store.update('runs', rid, data);
           await Promise.all(rows.map(r => store.create('lines', { runId: rid, empId: r.id, data: { name: r.name, title: r.title, dept: r.dept, calc: r.calc } })));
-          ui.toast('✅ تم الاعتماد وحفظ الأرقام'); HR.refresh(); return;
+          ui.toast('✅ تم الاعتماد وحفظ الأرقام');
+          /* [E] إشعار كل موظف بالراتب */
+          notifyPayroll(rows, month);
+          HR.refresh(); return;
         }
         if (run) await store.update('runs', run.id, data);
         else await store.create('runs', { month, ...data });
+        if (ns === 'paid') notifyPayroll(rows, month);
         ui.toast('تم تحديث حالة الشهر'); HR.refresh();
       }
     };
   }
+
+/* ── [E] إشعار الموظفين بالراتب ── */
+async function notifyPayroll(rows, month) {
+  if (!HR.notifications || !HR.notifications.push) return;
+  /* إرسال إشعار لكل موظف — silent fail */
+  const label = month.replace('-', '/');
+  for (const r of rows) {
+    try {
+      await HR.store.create('inbox', {
+        empId:   r.id,
+        type:    'payroll',
+        title:   'تم اعتماد راتب ' + label,
+        body:    'صافي الراتب: ' + HR.ui.money(r.calc.net),
+        url:     '#slips',
+        read:    false,
+        created: new Date().toISOString()
+      });
+    } catch (_) {}
+  }
+  HR.ui.toast('📨 تم إرسال إشعار الراتب لكل الموظفين');
+}
 };
+

@@ -1,4 +1,4 @@
-HR.docTypes = [
+﻿HR.docTypes = [
   { k: 'id', l: 'صورة البطاقة', x: 1 }, { k: 'birth', l: 'شهادة الميلاد' }, { k: 'edu', l: 'المؤهل الدراسي' }, { k: 'crim', l: 'الفيش الجنائي', x: 1 },
   { k: 'mil', l: 'موقف التجنيد' }, { k: 'contract', l: 'عقد العمل', x: 1 }, { k: 'med', l: 'الكشف الطبي', x: 1 }, { k: 'photo', l: 'صور شخصية' }
 ];
@@ -146,7 +146,7 @@ HR.pages.profile = {
     const av = photoSrc ? '<img class="av" alt="" src="' + photoSrc + '">' : '<span class="av" style="background:' + ui.color(e) + '">' + esc(e.name.trim()[0]) + '</span>';
     const kp = (l, v, s, c) => '<div class="card kpi"><span>' + l + '</span><b class="' + (c || '') + '" style="font-size:26px">' + v + '</b><small style="margin:0">' + s + '</small></div>';
     root.innerHTML =
-      '<div class="bc" style="margin-bottom:10px"><a href="#dashboard">الرئيسية</a> › <a href="#employees">الموظفون</a> › ' + esc(e.name) + '</div>' +
+      '<div class="bc" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span><a href="#dashboard">الرئيسية</a> › <a href="#employees">الموظفون</a> › ' + esc(e.name) + '</span><button class="btn ghost sm" data-a="pdf-profile">📄 تصدير PDF</button></div>' +
       '<div class="card pc"><div class="pav">' + av + '<button class="btn ghost sm" data-a="photo">تغيير الصورة</button></div>' +
       '<div class="pi"><h1>' + esc(e.name) + '</h1><p>' + esc(e.title) + ' • ' + esc(e.dept) + '</p><div class="tg">' + ui.tag(S[0], S[1]) + (e.contractType ? ui.tag(e.contractType, 'mu') : '') + (bad ? ui.tag(bad + ' مستند ناقص', 'da') : '') + '</div><div class="meta"><span>مدة الخدمة: ' + tenure + '</span><span>التعيين: ' + e.hire + '</span>' + (mgr ? '<span>المدير: ' + esc(mgr.name) + '</span>' : '') + (e.phone ? '<span>' + esc(e.phone) + '</span>' : '') + (e.status === 'terminated' && e.endDate ? '<span style="color:var(--da)">انتهت الخدمة: ' + e.endDate + (e.endReason ? ' (' + esc(e.endReason) + ')' : '') + '</span>' : '') + '</div></div>' +
       '<div class="pcm"><span style="color:var(--mu);font-size:13px">اكتمال الملف ' + comp + '%</span><div class="pb"><i style="width:' + comp + '%"></i></div><div class="acts noprint"><button class="btn ghost sm" data-a="edj">تعديل</button><button class="btn ghost sm" data-a="print">طباعة</button>' + (e.status === 'terminated' ? '<button class="btn ghost sm" data-a="react">إعادة تفعيل</button>' : '<button class="btn danger sm" data-a="term">إنهاء الخدمة</button>') + (HR.user.role === 'admin' ? '<button class="btn danger sm" data-a="purge">حذف نهائي</button>' : '') + '</div></div></div>' +

@@ -1,4 +1,4 @@
-/* طبقة البيانات الحقيقية (Supabase). تحل محل التخزين المحلي لما يتملأ js/config.js */
+﻿/* طبقة البيانات الحقيقية (Supabase). تحل محل التخزين المحلي لما يتملأ js/config.js */
 (function () {
   const H = window.HR, C = window.HR_CONFIG || {};
   if (!C.supabaseUrl || !C.supabaseKey) return;           // وضع تجريبي صريح: الإعداد فاضي
@@ -12,7 +12,7 @@
   const sb = window.supabase.createClient(URL_CLEAN, String(C.supabaseKey).trim());
   H.mode = 'supabase'; H.sb = sb;
 
-  const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline', profiles: 'profiles', settings: 'settings', runs: 'payroll_runs', lines: 'payroll_lines', loans: 'loans' };
+  const TABLE = { employees: 'employees', attendance: 'attendance', leaves: 'leaves', candidates: 'candidates', payroll: 'payroll_adjustments', reviews: 'reviews', documents: 'documents', timeline: 'timeline', profiles: 'profiles', settings: 'settings', runs: 'payroll_runs', lines: 'payroll_lines', loans: 'loans', error_logs: 'error_logs', inbox: 'inbox', requests: 'requests', users: 'users', announcements: 'announcements' };
   const COLS = {
     employees: 'id name title dept phone email salary allowances hire status nid birth gender gov marital military address emerg_name emerg_phone emerg_rel contract_type contract_end probation_end insurance_no bank iban manager_id photo insured end_date end_reason remote_ok',
     attendance: 'id emp_id date check_in check_out in_lat in_lng in_acc in_dist in_site out_lat out_lng out_acc out_dist source',
@@ -26,7 +26,12 @@
     settings: 'id key value',
     runs: 'id month status total_net total_cost emp_count rules_snapshot state_snapshot approved_at approved_by reopen_reason',
     lines: 'id run_id emp_id net data',
-    loans: 'id emp_id title total installments start_month status note'
+    loans: 'id emp_id title total installments start_month status note',
+    error_logs: 'id emp_id context message stack url created_at',
+    inbox: 'id emp_id type title body url read created_at',
+    requests: 'id emp_id type status amount months remaining reason date hours field new_value note hr_note created_at',
+    users: 'id email role employee_id',
+    announcements: 'id title body type active pinned expires_at created_by created_at'
   };
   Object.keys(COLS).forEach(k => COLS[k] = COLS[k].split(' '));
   const REN = { employees: { allow: 'allowances' }, attendance: { in: 'check_in', out: 'check_out' }, leaves: { from: 'from_date', to: 'to_date' } };
